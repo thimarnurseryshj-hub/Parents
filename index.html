@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
+<script src="../tenant-config.js"></script>
 <script src="tenant-config.js"></script>
 <script id="stable-tenant-runtime-20260702">
 (function(){
@@ -1130,6 +1131,7 @@ window.renderExactEvaluation = function(e, autoPrint){
 <script>
 const OTP_API_URL = "https://script.google.com/macros/s/AKfycbws0Cr_NO4Lmd8ZrwdNc479RfTLwaySNunwrglhF-1VpDvMpqrA43HPYzqiFZ0Ax3LIQg/exec";
 const FB_BASE = ((window.KP_STABLE_TENANT && window.KP_STABLE_TENANT.firebaseRoot && window.KP_STABLE_TENANT.firebaseRoot()) || '');
+window.FB_BASE = window.FB_BASE || FB_BASE;
 const LOGO_SRC = ((window.NURSERY_BRANDING && window.NURSERY_BRANDING.logoOrPlaceholder && window.NURSERY_BRANDING.logoOrPlaceholder()) || (window.KP_TENANT_LOGO_SRC || ''));
 let currentParentEmail="", parentStudents=[], currentStudentIndex=0, db={}, parentPayments=[], parentEvaluations=[];
 const KP_PARENT_SESSION_KEY = "kp_parent_session_v1";
