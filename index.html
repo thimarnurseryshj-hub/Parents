@@ -173,7 +173,7 @@
     try { if (typeof selectStudent === 'function') selectStudent(0); } catch (_e) {}
     try { renderEvaluations(); } catch (_e) {}
   };
-  if (document.body.classList.contains('parentLoggedIn')) {
+  if (document.body && document.body.classList.contains('parentLoggedIn')) {
     hide('loginHero');
     hide('loginCard');
     hide('otpCard');
@@ -2498,7 +2498,7 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
     try { if (typeof selectStudent === 'function') selectStudent(0); } catch (_e2) {}
     try { renderEvaluations(); } catch (_e3) {}
   };
-  if (document.body.classList.contains('parentLoggedIn')) {
+  if (document.body && document.body.classList.contains('parentLoggedIn')) {
     hide('loginHero'); hide('loginCard'); hide('otpCard'); show('dashboard');
     try { renderEvaluations(); } catch (_e) {}
   }
