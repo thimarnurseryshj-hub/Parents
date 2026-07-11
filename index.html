@@ -1694,7 +1694,13 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
   function cfg(){ return window.NURSERY_TENANT_CONFIG || {}; }
   function services(){ return cfg().services || {}; }
   function firebaseBaseUrl(){
-    return String(services().firebaseBaseUrl || services().firebaseUrl || window.FB_BASE || window.FIREBASE_URL || window.FIREBASE_DB_URL || '').replace(/\/+$/, '');
+    var stableRoot = '';
+    try {
+      if (window.KP_STABLE_TENANT && typeof window.KP_STABLE_TENANT.firebaseRoot === 'function') {
+        stableRoot = window.KP_STABLE_TENANT.firebaseRoot();
+      }
+    } catch (_err) {}
+    return String(stableRoot || window.FB_BASE || window.FIREBASE_URL || window.FIREBASE_DB_URL || services().firebaseBaseUrl || services().firebaseUrl || '').replace(/\/+$/, '');
   }
   function norm(v){ return String(v || '').trim().toLowerCase(); }
   function cleanPhone(v){ return String(v || '').replace(/\D+/g, ''); }
@@ -1720,7 +1726,11 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
     var out = [];
     keys.forEach(function(k){
       var v = readPath(obj, String(k).split('.'));
-      if (v != null && String(v).trim()) out.push(String(v).trim());
+      if (Array.isArray(v)) {
+        v.forEach(function(item){ if (item != null && String(item).trim()) out.push(String(item).trim()); });
+      } else if (v != null && String(v).trim()) {
+        out.push(String(v).trim());
+      }
     });
     return out;
   }
@@ -1728,7 +1738,7 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
     var out = [];
     try { if (typeof window.parentEmails === 'function') out = out.concat(window.parentEmails(student) || []); } catch(_e) {}
     out = out.concat(valuesFrom(student, [
-      'parentEmail','email','fatherEmail','motherEmail','guardianEmail','parent.email','father.email','mother.email','guardian.email',
+      'parentEmail','email','fatherEmail','motherEmail','guardianEmail','parentEmails','emails','parent.email','father.email','mother.email','guardian.email',
       'father.emailAddress','mother.emailAddress','fatherEmailAddress','motherEmailAddress'
     ]));
     return Array.from(new Set(out.map(norm).filter(Boolean)));
@@ -1738,12 +1748,12 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
   }
   function passwords(student){
     return valuesFrom(student, [
-      'parentAccessPassword','parentPortalPassword','parentPassword','portalPassword','accessPassword','password','code','accessCode','parentAccessCode',
-      'parent.accessPassword','parent.portalPassword','parent.password','father.parentAccessPassword','mother.parentAccessPassword'
+      'parentAccessPassword','parentPortalPassword','parentPassword','portalPassword','accessPassword','password','code','id','key','accessCode','parentAccessCode',
+      'parentAccess.code','parentAccess.password','parentAccess.parentAccessPassword','parent.accessPassword','parent.portalPassword','parent.password','father.parentAccessPassword','mother.parentAccessPassword'
     ]).map(String).filter(Boolean);
   }
   function isEnabled(student){
-    var vals = valuesFrom(student, ['parentPortalEnabled','parentAccessEnabled','enabled','active','parentAccessStatus','portalAccessStatus','status']);
+    var vals = valuesFrom(student, ['parentPortalEnabled','parentAccessEnabled','enabled','active','parentAccess.enabled','parentAccess.active','parentAccessStatus','portalAccessStatus','status']);
     if (!vals.length) return true;
     var disabledWords = ['false','disabled','inactive','off','no','0','\u0645\u0639\u0637\u0644','\u063a\u064a\u0631 \u0645\u0641\u0639\u0644'];
     var enabledWords = ['true','enabled','active','on','yes','1','\u0645\u0641\u0639\u0644','\u0641\u0639\u0627\u0644'];
@@ -1769,7 +1779,7 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
     var recIds = valuesFrom(rec, ['studentId','childId','linkedStudentId','approvedStudentId','student.id','child.id']);
     var stuIds = valuesFrom(student, ['id','studentId','childId','requestId']);
     if (recIds.length && stuIds.length && recIds.some(function(id){ return stuIds.indexOf(id) !== -1; })) return true;
-    var recEmails = valuesFrom(rec, ['email','parentEmail','fatherEmail','motherEmail']).map(norm);
+    var recEmails = valuesFrom(rec, ['email','parentEmail','fatherEmail','motherEmail','parentEmails','emails']).map(norm);
     return recEmails.indexOf(email) !== -1 || parentEmails(student).indexOf(email) !== -1;
   }
   function matchStudent(db, email, password){
@@ -1778,13 +1788,16 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
     var direct = emailStudents.find(function(s){ return isEnabled(s) && passwords(s).indexOf(password) !== -1; });
     if (direct) return { student: direct, emailStudents: emailStudents };
     var records = accessRecords(db).filter(function(r){
-      var recEmails = valuesFrom(r, ['email','parentEmail','fatherEmail','motherEmail']).map(norm);
-      var recPhones = valuesFrom(r, ['phone','mobile','fatherPhone','motherPhone']).map(cleanPhone);
-      var recPasswords = valuesFrom(r, ['password','code','accessCode','parentAccessPassword','parentPortalPassword']).map(String);
+      var recEmails = valuesFrom(r, ['email','parentEmail','fatherEmail','motherEmail','parentEmails','emails']).map(norm);
+      var recPhones = valuesFrom(r, ['phone','mobile','fatherPhone','motherPhone','phones','parentPhones']).map(cleanPhone);
+      var recPasswords = valuesFrom(r, ['password','code','id','key','accessCode','parentAccessPassword','parentPortalPassword']).map(String);
       var enabled = isEnabled(r);
       return enabled && recPasswords.indexOf(password) !== -1 && (recEmails.indexOf(email) !== -1 || recPhones.indexOf(cleanPhone(email)) !== -1);
     });
     for (var i=0; i<records.length; i++){
+      var snapshotStudents = asArray(records[i].students).map(function(s){ return s && typeof s === 'object' ? s : null; }).filter(Boolean);
+      var snapshotMatch = snapshotStudents.find(function(s){ return parentEmails(s).indexOf(email) !== -1; }) || snapshotStudents[0];
+      if (snapshotMatch) return { student: snapshotMatch, emailStudents: emailStudents };
       var linked = students.find(function(s){ return recordMatchesStudent(records[i], s, email); });
       if (linked) return { student: linked, emailStudents: emailStudents };
     }
