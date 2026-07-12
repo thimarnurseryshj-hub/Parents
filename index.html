@@ -650,6 +650,12 @@ function kpEvalComputeEvaluatedMonths(rec){
   });
   return out;
 }
+function kpEvalHasSavedRadioValue(value, expectedLevel){
+  if (value === null || value === undefined || value === '') return false;
+  if (typeof value === 'string' && value.trim() === '') return false;
+  var n = Number(value);
+  return !isNaN(n) && n === expectedLevel;
+}
 function kpEvalBuildFormHTML(form, student, editable, savedData, quarterId, lockedMonths, academicYear){
   var isAr = form.lang === 'ar';
   var dir = isAr ? 'rtl' : 'ltr';
@@ -732,7 +738,7 @@ function kpEvalBuildFormHTML(form, student, editable, savedData, quarterId, lock
           var checked = '';
           if (savedData && savedData.skills) {
             var v = savedData.skills[String(rowIdx)];
-            if (v && Number(v[m]) === lvl) checked = 'checked';
+            if (v && kpEvalHasSavedRadioValue(v[m], lvl)) checked = 'checked';
           }
           cells.push('<td class="' + cellClass + '" style="text-align:center"><input type="radio" name="' + name + '" value="' + lvl + '" ' + dis + ' ' + checked + '/></td>');
         }
@@ -755,7 +761,7 @@ function kpEvalBuildFormHTML(form, student, editable, savedData, quarterId, lock
           var ck = '';
           if (savedData && savedData.skills) {
             var cv = savedData.skills[String(rowIdx)];
-            if (cv && Number(cv[cm]) === clvl) ck = 'checked';
+            if (cv && kpEvalHasSavedRadioValue(cv[cm], clvl)) ck = 'checked';
           }
           // Use a <label> wrapping the radio + the level text — gives a big
           // tap target (the whole label) so users do not have to aim at the
