@@ -2920,4 +2920,91 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
 })();
 </script>
 
+<script id="kp-parent-dashboard-visibility-20260713">
+(function(){
+  "use strict";
+  if (window.__kpParentDashboardVisibility20260713) return;
+  window.__kpParentDashboardVisibility20260713 = true;
+  var running = false;
+
+  function byId(id){ return document.getElementById(id); }
+  function isHidden(node){
+    if (!node) return true;
+    if (node.classList && node.classList.contains("hidden")) return true;
+    try { return window.getComputedStyle(node).display === "none"; } catch(_e) { return false; }
+  }
+  function savedEmail(){
+    try {
+      var raw = localStorage.getItem("kp_parent_session_v1");
+      var session = raw ? JSON.parse(raw) : null;
+      return session && session.email ? String(session.email).trim() : "";
+    } catch(_e) {
+      return "";
+    }
+  }
+  function dashboardHasData(){
+    var dash = byId("dashboard");
+    if (!dash) return false;
+    var text = dash.innerText || "";
+    return text.indexOf("@") >= 0 || text.indexOf("Parent Portal") >= 0 || text.indexOf("Portal") >= 0;
+  }
+  function shouldShowDashboard(){
+    var dash = byId("dashboard");
+    if (!dash || !isHidden(dash)) return false;
+    if (savedEmail()) return true;
+    return isHidden(byId("loginCard")) && isHidden(byId("otpCard")) && isHidden(byId("loginHero")) && dashboardHasData();
+  }
+  function repaint(){
+    try { if (typeof renderStudentTabs === "function") renderStudentTabs(); } catch(_e) {}
+    try { if (typeof renderProfile === "function") renderProfile(); } catch(_e) {}
+    try { if (typeof renderPayments === "function") renderPayments(); } catch(_e) {}
+    try { if (typeof renderEvaluations === "function") renderEvaluations(); } catch(_e) {}
+  }
+  function reveal(){
+    if (running) return;
+    running = true;
+    try {
+      var dash = byId("dashboard");
+      if (shouldShowDashboard() && dash) {
+        document.body.classList.add("parentLoggedIn");
+        dash.classList.remove("hidden");
+      }
+      if (dash && !isHidden(dash)) repaint();
+    } finally {
+      running = false;
+    }
+  }
+  function wrap(name){
+    var original = window[name];
+    if (typeof original !== "function" || original.__kpVisibilityWrapped) return;
+    window[name] = function(){
+      var result = original.apply(this, arguments);
+      setTimeout(reveal, 0);
+      setTimeout(reveal, 250);
+      setTimeout(reveal, 1000);
+      return result;
+    };
+    window[name].__kpVisibilityWrapped = true;
+    try { eval(name + " = window[name]"); } catch(_e) {}
+  }
+  function start(){
+    wrap("openDashboard");
+    wrap("restoreParentSession");
+    reveal();
+    setTimeout(reveal, 250);
+    setTimeout(reveal, 1000);
+    setTimeout(reveal, 2500);
+    if (window.MutationObserver) {
+      var observer = new MutationObserver(reveal);
+      ["dashboard","loginCard","otpCard","loginHero"].forEach(function(id){
+        var node = byId(id);
+        if (node) observer.observe(node, { attributes: true, attributeFilter: ["class","style"] });
+      });
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  else start();
+})();
+</script>
+
 
