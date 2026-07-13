@@ -3090,5 +3090,101 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
   else { setTimeout(reveal, 100); setTimeout(reveal, 800); }
 })();
 </script>
-
-
+<script id="kp-parent-login-stabilizer-20260713d">
+(function(){
+  if (window.__kpParentLoginStabilizerReady) return;
+  window.__kpParentLoginStabilizerReady = true;
+  function byId(id){ return document.getElementById(id); }
+  function norm(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
+  function hasRealStudent(){
+    try {
+      return Array.isArray(window.parentStudents || parentStudents) && (window.parentStudents || parentStudents).some(function(s){
+        if (!s || typeof s !== 'object') return false;
+        return !!(s.name || s.name_ar || s.name_en || s.studentName || s.childName || s.id || s.firebaseKey || s.key || s.email || s.fatherEmail || s.motherEmail);
+      });
+    } catch(_e) { return false; }
+  }
+  function loginCards(){ return [byId('loginCard'), byId('otpCard')].filter(Boolean); }
+  function dashboard(){ return byId('dashboard'); }
+  function showLogin(){
+    loginCards().forEach(function(el){ el.classList.remove('hidden'); el.style.display=''; });
+    var dash = dashboard(); if (dash) dash.classList.add('hidden');
+    document.body.classList.remove('parentLoggedIn');
+  }
+  function showPortal(){
+    if (!hasRealStudent()) return false;
+    loginCards().forEach(function(el){ el.classList.add('hidden'); el.style.display='none'; });
+    var dash = dashboard(); if (dash) dash.classList.remove('hidden');
+    document.body.classList.add('parentLoggedIn');
+    return true;
+  }
+  function setMessage(text, ok){
+    var box = byId('loginMsg') || byId('otpMsg');
+    if (!box) return;
+    box.textContent = text || '';
+    box.classList.add('on');
+    box.classList.toggle('ok', !!ok);
+    box.classList.toggle('err', !ok);
+  }
+  function clearMessage(){
+    ['loginMsg','otpMsg'].forEach(function(id){ var el=byId(id); if(el){ el.textContent=''; el.classList.remove('on','ok','err'); } });
+  }
+  function wireButton(){
+    var btn = byId('sendBtn');
+    if (!btn || btn.__kpParentLoginWiredD) return;
+    btn.__kpParentLoginWiredD = true;
+    btn.type = 'button';
+    btn.textContent = 'Login | دخول';
+    btn.onclick = null;
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+      clearMessage();
+      var email = norm((byId('parentEmail') || {}).value);
+      var pass = String((byId('parentPassword') || {}).value || '').trim();
+      if (!email) return setMessage('يرجى إدخال الإيميل المسجل.', false);
+      if (!pass) return setMessage('يرجى إدخال كلمة مرور ولي الأمر.', false);
+      var fn = window.parentPasswordLogin || window.loginParent || window.sendOtp;
+      if (typeof fn !== 'function') return setMessage('تعذر تشغيل تسجيل الدخول. يرجى تحديث الصفحة.', false);
+      Promise.resolve(fn()).then(function(){
+        setTimeout(function(){
+          if (!showPortal()) {
+            var msg = (byId('loginMsg') && byId('loginMsg').textContent) || '';
+            if (!msg) setMessage('لا يوجد طالب مرتبط بهذا الإيميل في النظام.', false);
+          }
+        }, 300);
+      }).catch(function(err){
+        setMessage((err && err.message) || 'تعذر تسجيل الدخول. تحققي من البيانات.', false);
+      });
+    }, true);
+  }
+  function wrap(name){
+    var original = window[name];
+    if (typeof original !== 'function' || original.__kpParentWrappedD) return;
+    window[name] = function(){
+      var result = original.apply(this, arguments);
+      return Promise.resolve(result).then(function(value){ setTimeout(showPortal, 100); return value; });
+    };
+    window[name].__kpParentWrappedD = true;
+    try { eval(name + ' = window[name]'); } catch(_e) {}
+  }
+  function restoreValidSession(){
+    try {
+      if (typeof window.restoreParentSession === 'function') window.restoreParentSession();
+      setTimeout(function(){ if (!showPortal()) showLogin(); }, 500);
+    } catch(_e) { showLogin(); }
+  }
+  function init(){
+    wireButton();
+    wrap('parentPasswordLogin');
+    wrap('loginParent');
+    wrap('openDashboard');
+    wrap('selectStudent');
+    if (hasRealStudent()) showPortal();
+    else restoreValidSession();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  setInterval(function(){ wireButton(); if (document.body.classList.contains('parentLoggedIn') && !hasRealStudent()) showLogin(); }, 1200);
+})();
+</script>
