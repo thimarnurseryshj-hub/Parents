@@ -278,7 +278,7 @@ function getReceiptStampDataUrl() {
   try { candidates.push(logoDataUrl); } catch (_e) {}
   try { candidates.push(LOGO_SRC); } catch (_e) {}
   for (var i = 0; i < candidates.length; i++) {
-    if (typeof candidates[i] === 'string' && /^data:image//.test(candidates[i])) return candidates[i];
+    if (typeof candidates[i] === 'string' && /^data:image\//.test(candidates[i])) return candidates[i];
   }
   return '';
 }
@@ -1162,10 +1162,10 @@ function paymentSortValue(p){
 function studentField(s,group){const map={name:["name","studentName","childName","arabicName","fullName","اسم الطالب"],nameEn:["nameEn","englishName","nameEnglish","studentEnglishName","childEnglishName"],cls:["cls","class","className","studentClass","classLabel","grade","الفصل","الصف"],dob:["dob","birthDate","dateOfBirth","birth_date"],birthPlace:["bpl","birthPlace","placeOfBirth"],gender:["gen","gender","sex"],nationality:["nat","nationality"],idNo:["idNo","emiratesId","eid","idNumber","emiratesID"],status:["studentStatus","status","enrollmentStatus"],fatherName:["dad","dadFull","fatherName","dadName","fatherFullName","parentName","guardianName"],fatherPhone:["dph","dadMob","dadMobile","dadPhone","fatherPhone","fatherMobile","fatherTelephone"],fatherEmail:["dadEmail","fatherEmail","father_email","dad_email","fatherMail","dadMail","emailFather"],fatherJob:["job","dadJob","fatherJob","dadWork","fatherWork","fatherOccupation"],motherName:["mom","momFull","motherName","momName","motherFullName"],motherPhone:["mph","momMob","momMobile","momPhone","motherPhone","motherMobile","motherTelephone"],motherEmail:["momEmail","motherEmail","mother_email","mom_email","motherMail","momMail","emailMother"],motherJob:["momJob","motherJob","momWork","motherWork","motherOccupation"],address:["addr","address","homeAddress","fullAddress"],emergencyName:["emergName","emergencyName","emergencyContact","emergencyPerson"],emergencyRel:["emergRel","emergencyRelation"],emergencyPhone:["emergMob","emergencyPhone","emergencyMobile","emergencyContactPhone"],health:["health","healthStatus","healthOverride","healthDetails","medicalNotes","medicalStatus"],notes:["note","notes","remarks","parentNotes"]};return first(s,map[group]||[])}
 function studentName(s){return studentField(s,"name")}
 function studentId(s){return first(s,["id","studentId","childId","student_id","key","_key"])}
-function studentIds(s){return ["id","studentId","childId","student_id"].map(k=>compact(s&&s[k])).filter(Boolean)}
-function studentNames(s){return [studentField(s,"name"),first(s,["studentName","childName","payerName"])].map(arabicKey).filter(Boolean)}
+function studentIds(s){return ["id","studentId","childId","student_id","stuId","linkedStudentId","approvedStudentId","requestId","key","_key","studentNo","studentNumber","studentCode","studentKey","firebaseKey","registrationId","kidId","childKey"].map(k=>compact(s&&s[k])).filter(Boolean)}
+function studentNames(s){return [studentField(s,"name"),first(s,["studentName","childName","approvedStudentName","name","arabicName","fullName","payerName"])].map(arabicKey).filter(Boolean)}
 function parentEmails(s){return [studentField(s,"fatherEmail"),studentField(s,"motherEmail"),first(s,["parentEmail","guardianEmail","email"])].map(norm).filter(Boolean)}
-function sameStudent(rec,s){rec=flattenRecord(rec);const sid=studentIds(s),rid=studentIds(rec);if(sid.length&&rid.some(x=>sid.includes(x)))return true;const sn=studentNames(s),rn=studentNames(rec);if(sn.length&&rn.some(x=>sn.includes(x)))return true;return false}
+function sameStudent(rec,s){rec=flattenRecord(rec);const sid=studentIds(s),rid=studentIds(rec);if(sid.length&&rid.some(x=>sid.includes(x)))return true;const sn=studentNames(s),rn=studentNames(rec);if(sn.length&&rn.some(x=>sn.includes(x)))return true;const se=parentEmails(s),re=[studentField(rec,"fatherEmail"),studentField(rec,"motherEmail"),first(rec,["parentEmail","guardianEmail","email","fatherEmail","motherEmail","dadEmail","momEmail"])].map(norm).filter(Boolean);if(se.length&&re.some(x=>se.includes(x)))return true;const phoneNorm=x=>String(x||"").replace(/\D/g,"");const sp=[studentField(s,"fatherPhone"),studentField(s,"motherPhone"),first(s,["parentPhone","guardianPhone","phone","mobile"])].map(phoneNorm).filter(Boolean);const rp=[studentField(rec,"fatherPhone"),studentField(rec,"motherPhone"),first(rec,["parentPhone","guardianPhone","phone","mobile","fatherPhone","motherPhone","dadMob","momMob"])].map(phoneNorm).filter(Boolean);if(sp.length&&rp.some(x=>sp.includes(x)))return true;return false}
 function isParentLinkedToStudent(c,email){const emails=parentEmails(c);return !!email&&emails.includes(email)}
 function matchAndEnrichStudent(otpStudent){const base=flattenRecord(otpStudent,"otp");const all=[].concat(collection(db.students,"students")).concat(collection(db.registrationRequests&&db.registrationRequests.accepted,"registrationRequests_accepted"));const baseIds=studentIds(base),baseNames=studentNames(base),email=norm(currentParentEmail);function strongIdentity(c){const cIds=studentIds(c),cNames=studentNames(c);if(baseIds.length&&cIds.some(x=>baseIds.includes(x)))return true;return !!(baseNames.length&&cNames.some(x=>baseNames.includes(x)))}function score(c){if(!isParentLinkedToStudent(c,email))return -999999;if(!strongIdentity(c))return -999999;let sc=0;const cIds=studentIds(c),cNames=studentNames(c);if(baseIds.length&&cIds.some(x=>baseIds.includes(x)))sc+=5000;if(baseNames.length&&cNames.some(x=>baseNames.includes(x)))sc+=2500;if(c._source==="students")sc+=1500;if(String(c._source).includes("accepted"))sc+=500;sc+=Object.keys(c).filter(k=>c[k]!==""&&c[k]!=null).length;return sc}const best=all.map(c=>({c,sc:score(c)})).filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc)[0];return best?Object.assign({},base,best.c):base}
 async function sendOtp(){clearMsg("loginMsg");const email=norm($("parentEmail").value);if(!email)return msg("loginMsg","يرجى إدخال الإيميل المسجل");currentParentEmail=email;loader("loginLoader",true);$("sendBtn").disabled=true;const res=await postJson(OTP_API_URL,{action:"sendOtp",email});loader("loginLoader",false);$("sendBtn").disabled=false;if(!res.success)return msg("loginMsg",res.message||"فشل الطلب");$("loginCard").classList.add("hidden");$("otpCard").classList.remove("hidden");$("otpEmailText").textContent=email;$("otpInput").focus()}
@@ -1303,30 +1303,32 @@ function paymentsForStudent(){
    return true;
  }).sort((a,b)=>paymentSortValue(b)-paymentSortValue(a));
 }
-function renderPayments(){parentPayments=paymentsForStudent();$("viewPayments").innerHTML='<h3>المدفوعات (' + parentPayments.length + ')</h3>'+(parentPayments.length?parentPayments.map((p,i)=>'<div class="listItem"><b>سند رقم: '+esc(first(p,["receiptNo","receiptNumber","number","id","receiptId"])||"-")+'</b><br><span>التاريخ: '+esc(first(p,["date","paymentDate","createdAt"])||"-")+'</span><br><span>المبلغ: '+esc(first(p,["amount","paid","total","value"])||"-")+' درهم</span><br><span>البيان: '+esc(first(p,["type","description","month","notes","feeType"])||"-")+'</span><div class="itemActions"><button class="btn" onclick="viewPayment('+i+')">عرض التفاصيل</button><button class="btnBlue" onclick="viewPayment('+i+',true)">PDF / طباعة</button></div></div>').join(""):'<div class="hint">لا توجد مدفوعات مرتبطة بهذا الطالب.</div>')}
+function renderPayments(){parentPayments=paymentsForStudent();window.parentPayments=parentPayments;$("viewPayments").innerHTML='<h3>المدفوعات (' + parentPayments.length + ')</h3>'+(parentPayments.length?parentPayments.map((p,i)=>'<div class="listItem"><b>سند رقم: '+esc(first(p,["receiptNo","receiptNumber","number","id","receiptId"])||"-")+'</b><br><span>التاريخ: '+esc(first(p,["date","paymentDate","createdAt"])||"-")+'</span><br><span>المبلغ: '+esc(first(p,["amount","paid","total","value"])||"-")+' درهم</span><br><span>البيان: '+esc(first(p,["type","description","month","notes","feeType"])||"-")+'</span><div class="itemActions"><button class="btn" onclick="viewPayment('+i+')">عرض التفاصيل</button><button class="btnBlue" onclick="viewPayment('+i+',true)">PDF / طباعة</button></div></div>').join(""):'<div class="hint">لا توجد مدفوعات مرتبطة بهذا الطالب.</div>')}
 function evaluationsForStudent(){
- const s=parentStudents[currentStudentIndex];
+ const s=parentStudents[currentStudentIndex]||{};
  const out=[];
  const seen={};
  function add(section,source){
-   collection(section,source).forEach(function(e){
+   collection(section,source).forEach(function(raw){
+     const e=flattenRecord(raw,source);
      const status=norm(first(e,["status","approvalStatus","state","decision"]));
-     const deleted=e.deleted===true||e.archived===true||status==="deleted"||status==="rejected"||status==="Ù…Ø±ÙÙˆØ¶"||status==="Ù…Ø­Ø°ÙˆÙ";
-     const visible=status==="approved"||status==="Ù…Ø¹ØªÙ…Ø¯"||status==="accepted"||!!e.approvedAt||!!e.stampDataUrl||!status;
-     if(!deleted&&visible&&sameStudent(e,s)){
-       const key=String(first(e,["id","evaluationId","evalId","key"])||JSON.stringify(e));
-       if(!seen[key]){seen[key]=true;out.push(e);}
-     }
+     const deleted=e.deleted===true||e.archived===true||["deleted","rejected","removed","\u0645\u0631\u0641\u0648\u0636","\u0645\u062d\u0630\u0648\u0641"].includes(status);
+     const visible=!deleted&&(status==="approved"||status==="accepted"||status==="\u0645\u0639\u062a\u0645\u062f"||!!e.approvedAt||!!e.stampDataUrl||!status);
+     if(!visible) return;
+     const linked=(typeof evaluationLinkedToStudent==="function")?evaluationLinkedToStudent(e,s):sameStudent(e,s);
+     if(!linked) return;
+     const key=String(first(e,["id","evaluationId","evalId","firebaseKey","_key","key"])||JSON.stringify([first(e,["studentId","studentName","approvedStudentName","childName"]),first(e,["formId","formName","level"]),first(e,["quarter","term","period"]),first(e,["academicYear","year","schoolYear"])]));
+     if(!seen[key]){seen[key]=true;out.push(e);}
    });
  }
  ["evaluations","approvedEvaluations","studentEvaluations","evaluationRecords","assessments"].forEach(function(k){add(db&&db[k],k);});
  ["evaluations","approvedEvaluations","studentEvaluations","evaluationRecords","evals","assessments"].forEach(function(k){add(s&&s[k],"student_"+k);});
  [db&&db.parentAccessCodes,db&&db.parentPortalAccess,db&&db.parentPasswords].forEach(function(section,idx){
    collection(section,"parent_access_"+idx).forEach(function(rec){
-     if(isParentLinkedToStudent(rec,norm(currentParentEmail))||sameStudent(rec,s)){
+     if((typeof isParentLinkedToStudent==="function"&&isParentLinkedToStudent(rec,norm(currentParentEmail)))||sameStudent(rec,s)){
        ["evaluations","approvedEvaluations","studentEvaluations","evaluationRecords","evals","assessments"].forEach(function(k){add(rec&&rec[k],"parent_access_"+k);});
        collection(rec&&rec.students,"parent_access_students").forEach(function(st){
-         if(isParentLinkedToStudent(st,norm(currentParentEmail))||sameStudent(st,s)){
+         if((typeof isParentLinkedToStudent==="function"&&isParentLinkedToStudent(st,norm(currentParentEmail)))||sameStudent(st,s)){
            ["evaluations","approvedEvaluations","studentEvaluations","evaluationRecords","evals","assessments"].forEach(function(k){add(st&&st[k],"parent_access_student_"+k);});
          }
        });
@@ -1334,7 +1336,8 @@ function evaluationsForStudent(){
    });
  });
  return out;
-}function renderEvaluations(){parentEvaluations=evaluationsForStudent();$("viewEvaluations").innerHTML='<h3>التقييمات المعتمدة</h3>'+(parentEvaluations.length?parentEvaluations.map((e,i)=>'<div class="listItem"><span class="badge">معتمد</span> <b>'+esc(first(e,["quarter","term","period"])||"تقييم")+'</b><br><span>العام الدراسي: '+esc(first(e,["academicYear","year","schoolYear"])||"-")+'</span><br><span>النموذج: '+esc(first(e,["formId","formName","level"])||"-")+'</span><div class="itemActions"><button class="btn" onclick="viewEvaluation('+i+')">عرض التقييم</button><button class="btnBlue" onclick="viewEvaluation('+i+',true)">PDF / طباعة</button></div></div>').join(""):'<div class="hint">لا توجد تقييمات معتمدة مرتبطة بهذا الطالب.</div>')}
+}
+function renderEvaluations(){parentEvaluations=evaluationsForStudent();window.parentEvaluations=parentEvaluations;$("viewEvaluations").innerHTML='<h3>التقييمات المعتمدة</h3>'+(parentEvaluations.length?parentEvaluations.map((e,i)=>'<div class="listItem"><span class="badge">معتمد</span> <b>'+esc(first(e,["quarter","term","period"])||"تقييم")+'</b><br><span>العام الدراسي: '+esc(first(e,["academicYear","year","schoolYear"])||"-")+'</span><br><span>النموذج: '+esc(first(e,["formId","formName","level"])||"-")+'</span><div class="itemActions"><button class="btn" onclick="viewEvaluation('+i+')">عرض التقييم</button><button class="btnBlue" onclick="viewEvaluation('+i+',true)">PDF / طباعة</button></div></div>').join(""):'<div class="hint">لا توجد تقييمات معتمدة مرتبطة بهذا الطالب.</div>')}
 function docHeader(title){return '<div class="docHeader"><img class="docLogo" src="'+LOGO_SRC+'"><h2>'+esc(title)+'</h2><div>Nursery | حضانة ثمار</div></div>'}
 function rowsTable(rows){return '<table class="table"><tbody>'+rows.map(r=>'<tr><th>'+esc(r[0])+'</th><td>'+esc(r[1]||"-")+'</td></tr>').join("")+'</tbody></table>'}
 function openDetail(title,html,autoPrint){$("detailTitle").textContent=title;$("printArea").innerHTML=html;$("detailOverlay").classList.remove("hidden");if(autoPrint)setTimeout(printDetail,400)}
@@ -1354,7 +1357,7 @@ function printDetail(){
  setTimeout(function(){try{fw.focus();fw.print()}catch(e){}},400);
  setTimeout(function(){try{frame.remove()}catch(e){}},45000);
 }
-function viewPayment(i,autoPrint){const p=parentPayments[i]||{};renderExactReceipt(p,autoPrint)}
+function viewPayment(i,autoPrint){parentPayments=paymentsForStudent();window.parentPayments=parentPayments;const p=parentPayments[Number(i)]||{};if(!Object.keys(p).length){openDetail("Receipt",'<div class="hint">No receipt data found.</div>',autoPrint);return}renderExactReceipt(p,autoPrint)}
 function valueLabel(v){
  if(v==null||v==="") return "-";
  if(typeof v==="object"){
@@ -1428,7 +1431,7 @@ function evalTable(e){
   rows.map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+esc(valueLabel(r[1]))+'</td><td>'+esc(valueLabel(r[2]))+'</td><td>'+esc(valueLabel(r[3]))+'</td></tr>').join("")+
   '</tbody></table>';
 }
-function viewEvaluation(i,autoPrint){const e=parentEvaluations[i]||{};renderExactEvaluation(e,autoPrint)}
+function viewEvaluation(i,autoPrint){parentEvaluations=evaluationsForStudent();window.parentEvaluations=parentEvaluations;const e=parentEvaluations[Number(i)]||{};if(!Object.keys(e).length){openDetail("Evaluation",'<div class="hint">No evaluation data found.</div>',autoPrint);return}renderExactEvaluation(e,autoPrint)}
 const editFields=[["name","اسم الطالب"],["nameEn","الاسم بالإنجليزية"],["dob","تاريخ الميلاد"],["bpl","مكان الميلاد"],["gen","الجنس"],["nat","الجنسية"],["idNo","رقم الهوية"],["cls","الفصل"],["dad","اسم الأب"],["dph","هاتف الأب"],["dadEmail","إيميل الأب"],["job","عمل الأب"],["mom","اسم الأم"],["mph","هاتف الأم"],["momEmail","إيميل الأم"],["momJob","عمل الأم"],["addr","العنوان"],["emergName","جهة الطوارئ"],["emergRel","صلة القرابة"],["emergMob","هاتف الطوارئ"],["health","الحالة الصحية"],["note","ملاحظات"]];
 function renderRequest(){const s=parentStudents[currentStudentIndex];$("viewRequest").innerHTML='<h3>طلب تعديل البيانات</h3><div class="hint">لن يتم تعديل ملف الطالب مباشرة. سيتم إرسال الطلب للإدارة للمراجعة والاعتماد.</div><div class="requestGrid">'+editFields.map(f=>'<div><label>'+esc(f[1])+'</label><input id="chg_'+f[0]+'" value="'+esc(first(s,[f[0]])||studentField(s,guessGroup(f[0])))+'"></div>').join("")+'</div><label>ملاحظة لشرح سبب التعديل</label><textarea id="requestNote"></textarea><div class="actions"><button class="btn" onclick="submitChangeRequest()">إرسال طلب التعديل</button></div><div class="msg" id="requestMsg"></div>'}
 function guessGroup(k){const m={name:"name",nameEn:"nameEn",dob:"dob",bpl:"birthPlace",gen:"gender",nat:"nationality",idNo:"idNo",cls:"cls",dad:"fatherName",dph:"fatherPhone",dadEmail:"fatherEmail",job:"fatherJob",mom:"motherName",mph:"motherPhone",momEmail:"motherEmail",momJob:"motherJob",addr:"address",emergName:"emergencyName",emergRel:"emergencyRel",emergMob:"emergencyPhone",health:"health",note:"notes"};return m[k]||k}
@@ -1794,7 +1797,27 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
   var oldRestore = window.restoreParentSession || (typeof restoreParentSession === 'function' ? restoreParentSession : null);
   if (oldRestore) window.restoreParentSession = restoreParentSession = async function(){ var ok = await oldRestore.apply(this, arguments); cleanCurrent(); return !!(ok && parentStudents && parentStudents.length); };
 })();
-</script></body>
+</script><script id="kp-parent-action-global-fix-20260713">
+(function(){
+  function currentPayment(i){try{if(typeof paymentsForStudent==="function")window.parentPayments=paymentsForStudent();return (window.parentPayments||[])[Number(i)]||{};}catch(e){return {};}}
+  function currentEvaluation(i){try{if(typeof evaluationsForStudent==="function")window.parentEvaluations=evaluationsForStudent();return (window.parentEvaluations||[])[Number(i)]||{};}catch(e){return {};}}
+  window.viewPayment = function(i, autoPrint){
+    var p = currentPayment(i);
+    if (typeof window.renderExactReceipt === 'function') return window.renderExactReceipt(p, autoPrint);
+    if (typeof renderExactReceipt === 'function') return renderExactReceipt(p, autoPrint);
+    if (typeof openDetail === 'function') return openDetail('Receipt', '<div class="hint">Receipt view is unavailable.</div>', autoPrint);
+  };
+  window.viewEvaluation = function(i, autoPrint){
+    var e = currentEvaluation(i);
+    if (typeof window.renderExactEvaluation === 'function') return window.renderExactEvaluation(e, autoPrint);
+    if (typeof renderExactEvaluation === 'function') return renderExactEvaluation(e, autoPrint);
+    if (typeof openDetail === 'function') return openDetail('Evaluation', '<div class="hint">Evaluation view is unavailable.</div>', autoPrint);
+  };
+  try { viewPayment = window.viewPayment; } catch(_e) {}
+  try { viewEvaluation = window.viewEvaluation; } catch(_e) {}
+})();
+</script>
+</body>
 </html>
 <script id="kp-parent-security-doc-requests-20260510">
 (function(){
@@ -2213,14 +2236,28 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
       fetchJsonSection('payments'),
       fetchJsonSection('receipts'),
       fetchJsonSection('paymentRecords'),
-      fetchJsonSection('evaluations')
+      fetchJsonSection('evaluations'),
+      fetchJsonSection('approvedEvaluations').catch(function(){return {};}) ,
+      fetchJsonSection('studentEvaluations').catch(function(){return {};}) ,
+      fetchJsonSection('evaluationRecords').catch(function(){return {};}) ,
+      fetchJsonSection('assessments').catch(function(){return {};}) ,
+      fetchJsonSection('parentAccessCodes').catch(function(){return {};}) ,
+      fetchJsonSection('parentPortalAccess').catch(function(){return {};}) ,
+      fetchJsonSection('parentPasswords').catch(function(){return {};})
     ]);
     db = window.db = {
       students: result[0] || {},
       payments: result[1] || {},
       receipts: result[2] || {},
       paymentRecords: result[3] || {},
-      evaluations: result[4] || {}
+      evaluations: result[4] || {},
+      approvedEvaluations: result[5] || {},
+      studentEvaluations: result[6] || {},
+      evaluationRecords: result[7] || {},
+      assessments: result[8] || {},
+      parentAccessCodes: result[9] || {},
+      parentPortalAccess: result[10] || {},
+      parentPasswords: result[11] || {}
     };
     return db;
   }
@@ -2341,4 +2378,14 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
   }
 })();
 </script>
+
+
+
+
+
+
+
+
+
+
 
