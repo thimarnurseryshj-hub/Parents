@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -2928,7 +2928,7 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
   var restoring = false;
 
   function byId(id){ return document.getElementById(id); }
-  function hidden(node){
+  function isHidden(node){
     if (!node) return true;
     if (node.classList && node.classList.contains("hidden")) return true;
     try { return getComputedStyle(node).display === "none"; } catch(_e) { return false; }
@@ -2938,13 +2938,16 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
       var raw = localStorage.getItem("kp_parent_session_v1");
       var session = raw ? JSON.parse(raw) : null;
       return session && session.email ? String(session.email).trim() : "";
-    } catch(_e) {
-      return "";
-    }
+    } catch(_e) { return ""; }
   }
-  function dashboardVisible(){
-    var dash = byId("dashboard");
-    return !!dash && !hidden(dash);
+  function hasLoadedStudent(){
+    try {
+      if (Array.isArray(window.parentStudents) && window.parentStudents.length) return true;
+      if (typeof parentStudents !== "undefined" && Array.isArray(parentStudents) && parentStudents.length) return true;
+    } catch(_e) {}
+    var summary = byId("childSummary");
+    var text = summary ? String(summary.innerText || "").trim() : "";
+    return !!(text && text.indexOf("@") >= 0 && text.replace(/[-\s]/g, "").length > 3);
   }
   function hideLogin(){
     ["loginHero","loginCard","otpCard"].forEach(function(id){
@@ -2952,41 +2955,71 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
       if (node) node.classList.add("hidden");
     });
   }
+  function showDashboard(){
+    var dash = byId("dashboard");
+    if (!dash || !hasLoadedStudent()) return false;
+    document.body.classList.add("parentLoggedIn");
+    dash.classList.remove("hidden");
+    hideLogin();
+    paint();
+    return true;
+  }
   function paint(){
     try { if (typeof renderStudentTabs === "function") renderStudentTabs(); } catch(_e) {}
     try { if (typeof renderProfile === "function") renderProfile(); } catch(_e) {}
     try { if (typeof renderPayments === "function") renderPayments(); } catch(_e) {}
     try { if (typeof renderEvaluations === "function") renderEvaluations(); } catch(_e) {}
   }
-  function fix(){
-    var dash = byId("dashboard");
-    var hasSession = !!sessionEmail();
-    if (hasSession && dash) {
-      document.body.classList.add("parentLoggedIn");
-      dash.classList.remove("hidden");
-      hideLogin();
-      paint();
-      if (!restoring && typeof window.restoreParentSession === "function") {
-        restoring = true;
-        Promise.resolve(window.restoreParentSession()).finally(function(){ restoring = false; setTimeout(paint, 100); });
-      }
-      return;
-    }
-    if (dashboardVisible()) {
-      hideLogin();
-      paint();
-    }
+  function restoreThenShow(){
+    if (restoring || !sessionEmail() || typeof window.restoreParentSession !== "function") return;
+    restoring = true;
+    Promise.resolve(window.restoreParentSession()).then(function(){
+      showDashboard();
+    }).finally(function(){
+      restoring = false;
+      setTimeout(showDashboard, 100);
+      setTimeout(showDashboard, 500);
+    });
   }
+  function fix(){
+    if (showDashboard()) return;
+    restoreThenShow();
+  }
+
+  var originalOpenDashboard = window.openDashboard;
+  if (typeof originalOpenDashboard === "function" && !originalOpenDashboard.__kpStudentGateWrapped) {
+    window.openDashboard = function(){
+      var result = originalOpenDashboard.apply(this, arguments);
+      setTimeout(fix, 0);
+      setTimeout(fix, 200);
+      return result;
+    };
+    window.openDashboard.__kpStudentGateWrapped = true;
+    try { openDashboard = window.openDashboard; } catch(_e) {}
+  }
+
+  var originalRestore = window.restoreParentSession;
+  if (typeof originalRestore === "function" && !originalRestore.__kpStudentGateWrapped) {
+    window.restoreParentSession = function(){
+      return Promise.resolve(originalRestore.apply(this, arguments)).then(function(value){
+        showDashboard();
+        return value;
+      });
+    };
+    window.restoreParentSession.__kpStudentGateWrapped = true;
+    try { restoreParentSession = window.restoreParentSession; } catch(_e) {}
+  }
+
   function start(){
     fix();
     setTimeout(fix, 200);
     setTimeout(fix, 800);
     setTimeout(fix, 2000);
     if (window.MutationObserver) {
-      var observer = new MutationObserver(fix);
-      ["dashboard","loginCard","otpCard","loginHero"].forEach(function(id){
+      var observer = new MutationObserver(function(){ setTimeout(fix, 0); });
+      ["dashboard","loginCard","otpCard","loginHero","childSummary"].forEach(function(id){
         var node = byId(id);
-        if (node) observer.observe(node, {attributes:true, attributeFilter:["class","style"]});
+        if (node) observer.observe(node, {attributes:true, childList:true, subtree:true, attributeFilter:["class","style"]});
       });
     }
   }
@@ -3000,34 +3033,22 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
   "use strict";
   if (window.__kpParentDashboardVisibility20260713) return;
   window.__kpParentDashboardVisibility20260713 = true;
-  var running = false;
 
   function byId(id){ return document.getElementById(id); }
-  function isHidden(node){
-    if (!node) return true;
-    if (node.classList && node.classList.contains("hidden")) return true;
-    try { return window.getComputedStyle(node).display === "none"; } catch(_e) { return false; }
-  }
-  function savedEmail(){
+  function hasLoadedStudent(){
     try {
-      var raw = localStorage.getItem("kp_parent_session_v1");
-      var session = raw ? JSON.parse(raw) : null;
-      return session && session.email ? String(session.email).trim() : "";
-    } catch(_e) {
-      return "";
-    }
+      if (Array.isArray(window.parentStudents) && window.parentStudents.length) return true;
+      if (typeof parentStudents !== "undefined" && Array.isArray(parentStudents) && parentStudents.length) return true;
+    } catch(_e) {}
+    var summary = byId("childSummary");
+    var text = summary ? String(summary.innerText || "").trim() : "";
+    return !!(text && text.indexOf("@") >= 0 && text.replace(/[-\s]/g, "").length > 3);
   }
-  function dashboardHasData(){
-    var dash = byId("dashboard");
-    if (!dash) return false;
-    var text = dash.innerText || "";
-    return text.indexOf("@") >= 0 || text.indexOf("Parent Portal") >= 0 || text.indexOf("Portal") >= 0;
-  }
-  function shouldShowDashboard(){
-    var dash = byId("dashboard");
-    if (!dash || !isHidden(dash)) return false;
-    if (savedEmail()) return true;
-    return isHidden(byId("loginCard")) && isHidden(byId("otpCard")) && isHidden(byId("loginHero")) && dashboardHasData();
+  function hideLogin(){
+    ["loginHero","loginCard","otpCard"].forEach(function(id){
+      var node = byId(id);
+      if (node) node.classList.add("hidden");
+    });
   }
   function repaint(){
     try { if (typeof renderStudentTabs === "function") renderStudentTabs(); } catch(_e) {}
@@ -3036,49 +3057,37 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
     try { if (typeof renderEvaluations === "function") renderEvaluations(); } catch(_e) {}
   }
   function reveal(){
-    if (running) return;
-    running = true;
-    try {
-      var dash = byId("dashboard");
-      if (shouldShowDashboard() && dash) {
-        document.body.classList.add("parentLoggedIn");
-        dash.classList.remove("hidden");
-      }
-      if (dash && !isHidden(dash)) repaint();
-    } finally {
-      running = false;
-    }
+    var dash = byId("dashboard");
+    if (!dash || !hasLoadedStudent()) return;
+    document.body.classList.add("parentLoggedIn");
+    dash.classList.remove("hidden");
+    hideLogin();
+    repaint();
   }
-  function wrap(name){
-    var original = window[name];
-    if (typeof original !== "function" || original.__kpVisibilityWrapped) return;
-    window[name] = function(){
-      var result = original.apply(this, arguments);
+  var originalOpenDashboard = window.openDashboard;
+  if (typeof originalOpenDashboard === "function" && !originalOpenDashboard.__kpDashboardRevealWrapped) {
+    window.openDashboard = function(){
+      var result = originalOpenDashboard.apply(this, arguments);
       setTimeout(reveal, 0);
-      setTimeout(reveal, 250);
-      setTimeout(reveal, 1000);
+      setTimeout(reveal, 200);
       return result;
     };
-    window[name].__kpVisibilityWrapped = true;
-    try { eval(name + " = window[name]"); } catch(_e) {}
+    window.openDashboard.__kpDashboardRevealWrapped = true;
+    try { openDashboard = window.openDashboard; } catch(_e) {}
   }
-  function start(){
-    wrap("openDashboard");
-    wrap("restoreParentSession");
-    reveal();
-    setTimeout(reveal, 250);
-    setTimeout(reveal, 1000);
-    setTimeout(reveal, 2500);
-    if (window.MutationObserver) {
-      var observer = new MutationObserver(reveal);
-      ["dashboard","loginCard","otpCard","loginHero"].forEach(function(id){
-        var node = byId(id);
-        if (node) observer.observe(node, { attributes: true, attributeFilter: ["class","style"] });
+  var originalRestore = window.restoreParentSession;
+  if (typeof originalRestore === "function" && !originalRestore.__kpDashboardRevealWrapped) {
+    window.restoreParentSession = function(){
+      return Promise.resolve(originalRestore.apply(this, arguments)).then(function(value){
+        reveal();
+        return value;
       });
-    }
+    };
+    window.restoreParentSession.__kpDashboardRevealWrapped = true;
+    try { restoreParentSession = window.restoreParentSession; } catch(_e) {}
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
-  else start();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ setTimeout(reveal, 100); setTimeout(reveal, 800); });
+  else { setTimeout(reveal, 100); setTimeout(reveal, 800); }
 })();
 </script>
 
