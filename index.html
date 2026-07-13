@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -975,7 +975,12 @@ window.renderExactEvaluation = function(e, autoPrint){
 <script>
 const KP_PARENT_SERVICES = ((window.NURSERY_TENANT_CONFIG || {}).services || {});
 const OTP_API_URL = String(KP_PARENT_SERVICES.otpApiUrl || '').trim();
-const FB_BASE = String(KP_PARENT_SERVICES.firebaseBaseUrl || '').replace(/\/+$/, '');
+function kpParentFirebaseRoot(){
+  var raw = String(KP_PARENT_SERVICES.firebaseBaseUrl || '').replace(/\/+$/, '');
+  if (!raw) return '';
+  return /\/nursery_data$/i.test(raw) ? raw : raw + '/nursery_data';
+}
+const FB_BASE = kpParentFirebaseRoot();
 const LOGO_SRC = (window.NURSERY_BRANDING && window.NURSERY_BRANDING.logoOrPlaceholder && window.NURSERY_BRANDING.logoOrPlaceholder()) || ''; 
 let currentParentEmail="", parentStudents=[], currentStudentIndex=0, db={}, parentPayments=[], parentEvaluations=[];
 let kpParentEvalLoadStarted=false, kpParentEvalLoadFinished=false;
@@ -1409,6 +1414,7 @@ function printDetail(){
  const content=($("printArea")&&$("printArea").innerHTML)||"";
  if(!content.trim()){ alert("لا توجد بيانات للطباعة"); return; }
  const html='<!doctype html><html lang="'+(localStorage.getItem("kp_parent_lang")==="en"?"en":"ar")+'" dir="'+(localStorage.getItem("kp_parent_lang")==="en"?"ltr":"rtl")+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+'</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><style>@page{size:A4 landscape;margin:5mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:Tajawal,Arial,sans-serif;direction:'+(localStorage.getItem("kp_parent_lang")==="en"?"ltr":"rtl")+';-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:12px}.printToolbar{position:fixed;top:0;left:0;right:0;background:#21834f;color:#fff;padding:10px;display:flex;gap:8px;justify-content:center;align-items:center;z-index:9}.printToolbar button{border:0;border-radius:10px;padding:9px 16px;font:inherit;font-weight:900;background:#fff;color:#21834f}.printDoc{max-width:1120px;margin:48px auto 0}.table{width:100%;border-collapse:collapse}.table th,.table td{border:1px solid #cfded5;padding:7px;text-align:right;vertical-align:top}.table th{background:#f1fbf5;color:#21834f}.docHeader{text-align:center;border-bottom:2px solid #cde9d8;padding-bottom:12px;margin-bottom:14px}.docLogo{width:82px;height:82px;object-fit:contain;border-radius:50%}.kp-parent-eval-print-header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;margin:0 0 8px 0;direction:ltr}.kp-parent-eval-print-header img{width:60px;height:60px;object-fit:contain;border-radius:50%}.kp-parent-eval-print-header div{font-weight:900;font-size:14px;color:#0f4a86;text-align:center}.kp-parent-eval-print-header .ar{direction:rtl}.kp-eval-print-parent{zoom:.88}.kp-eval-month-1{background:#dff0ff!important}.kp-eval-month-2{background:#fff0d6!important}.kp-eval-month-3{background:#e3f5e6!important}.kp-eval-table thead .kp-eval-month-1{background:#85c5f0!important;color:#063d6a!important}.kp-eval-table thead .kp-eval-month-2{background:#ffc978!important;color:#9a3e00!important}.kp-eval-table thead .kp-eval-month-3{background:#a6dcae!important;color:#14551f!important}.kp-eval-mobile-only,.kp-eval-cards{display:none!important}.kp-eval-desktop-only,.kp-eval-table-wrap{display:block!important;overflow:visible!important;border:0!important}.kp-eval-table{width:100%!important;border-collapse:collapse!important;font-size:7.8px!important;table-layout:fixed!important}.kp-eval-table th,.kp-eval-table td{border:1px solid #777!important;padding:1px 2px!important;line-height:1.08!important}.kp-eval-table input{width:10px!important;height:10px!important;margin:0!important}@media print{.printToolbar{display:none!important}.printDoc{margin:0}.noPrint{display:none!important}body{padding:0}.kp-eval-print-parent{zoom:.88;page-break-inside:avoid;break-inside:avoid}.kp-eval-table-wrap,.kp-eval-table,tr,td,th{page-break-inside:avoid;break-inside:avoid}}</style></head><body><div class="printToolbar"><button onclick="window.print()">طباعة / حفظ PDF</button><button onclick="window.close()">إغلاق</button><span>من خيار الوجهة اختاري حفظ PDF عند الحاجة</span></div><main class="printDoc">'+content+'</main><script>window.addEventListener("load",function(){setTimeout(function(){try{window.print()}catch(e){}},250)});<\/script></body></html>';
+</body></html>';
  const w=window.open('', '_blank');
  if(w){w.document.open();w.document.write(html);w.document.close();return;}
  const frame=document.createElement('iframe');
@@ -2171,13 +2177,747 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
   try { viewEvaluation = window.viewEvaluation; } catch(_e) {}
 })();
 </script>
+<script id="kp-parent-evaluation-source-fix-20260713">
+(function(){
+  if (window.__kpParentEvaluationSourceFix20260713) return;
+  window.__kpParentEvaluationSourceFix20260713 = true;
+
+  function text(v){ return String(v == null ? '' : v).trim(); }
+  function norm(v){ return text(v).toLowerCase(); }
+  function html(v){ try { if (typeof esc === 'function') return esc(v); } catch(_e) {} return text(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function firstLocal(obj, keys){
+    try { if (typeof first === 'function') { var f = first(obj, keys); if (f != null && f !== '') return f; } } catch(_e) {}
+    if (!obj) return '';
+    for (var i=0;i<keys.length;i++) if (obj[keys[i]] != null && obj[keys[i]] !== '') return obj[keys[i]];
+    return '';
+  }
+  function flatten(raw, source){
+    var out = raw && typeof raw === 'object' && raw.value && typeof raw.value === 'object' ? Object.assign({}, raw.value) : Object.assign({}, raw || {});
+    if (raw && typeof raw === 'object') {
+      if (!out._key && raw._key) out._key = raw._key;
+      if (!out.firebaseKey && raw.firebaseKey) out.firebaseKey = raw.firebaseKey;
+      if (!out.id && raw.id) out.id = raw.id;
+    }
+    if (source && !out._source) out._source = source;
+    return out;
+  }
+  function addMany(out, seen, section, source){
+    if (!section) return;
+    var list = [];
+    if (Array.isArray(section)) list = section;
+    else if (typeof section === 'object') Object.keys(section).forEach(function(k){ var v = section[k]; if (v && typeof v === 'object') { v = Object.assign({_key:k, firebaseKey:v.firebaseKey || k}, v); } list.push(v); });
+    list.forEach(function(raw){
+      var e = flatten(raw, source);
+      var key = text(firstLocal(e, ['id','evaluationId','evalId','firebaseKey','_key','key'])) || JSON.stringify(e).slice(0,300);
+      if (!seen[key]) { seen[key] = true; out.push(e); }
+    });
+  }
+  function localEvaluations(){ try { return JSON.parse(localStorage.getItem('kp_evaluations') || '[]') || []; } catch(_e) { return []; } }
+  function currentStudent(){
+    try { if (Array.isArray(parentStudents) && parentStudents.length) return parentStudents[currentStudentIndex || 0] || parentStudents[0] || {}; } catch(_e) {}
+    return window.currentParentStudent || window.parentStudent || {};
+  }
+  function collectEvaluations(){
+    var out = [], seen = {};
+    ['parentEvaluations','kpParentEvaluations','evaluations','approvedEvaluations','studentEvaluations','evaluationRecords','assessments'].forEach(function(k){ addMany(out, seen, window[k], 'window_' + k); });
+    addMany(out, seen, localEvaluations(), 'local_kp_evaluations');
+    var root = (typeof db !== 'undefined' && db) ? db : (window.db || window.parentDb || {});
+    ['evaluations','approvedEvaluations','studentEvaluations','evaluationRecords','assessments'].forEach(function(k){ addMany(out, seen, root && root[k], 'db_' + k); });
+    var s = currentStudent();
+    ['evaluations','approvedEvaluations','studentEvaluations','evaluationRecords','evals','assessments'].forEach(function(k){ addMany(out, seen, s && s[k], 'student_' + k); });
+    [root && root.parentAccessCodes, root && root.parentPortalAccess, root && root.parentPasswords, root && root.parents].forEach(function(section, idx){
+      if (!section) return;
+      var parents = Array.isArray(section) ? section : Object.keys(section).map(function(k){ return Object.assign({_key:k}, section[k] || {}); });
+      parents.forEach(function(p){
+        ['evaluations','approvedEvaluations','studentEvaluations','evaluationRecords','evals','assessments'].forEach(function(k){ addMany(out, seen, p && p[k], 'parent_' + idx + '_' + k); });
+        var sts = p && p.students;
+        if (sts) {
+          (Array.isArray(sts) ? sts : Object.keys(sts).map(function(k){ return Object.assign({_key:k}, sts[k] || {}); })).forEach(function(st){
+            ['evaluations','approvedEvaluations','studentEvaluations','evaluationRecords','evals','assessments'].forEach(function(k){ addMany(out, seen, st && st[k], 'parent_student_' + k); });
+          });
+        }
+      });
+    });
+    return out;
+  }
+  function tokensFrom(obj, keys){
+    var out = {};
+    keys.forEach(function(k){
+      var v = text(obj && obj[k]);
+      if (v) { out[norm(v)] = true; out[norm('k_' + v.replace(/^k_/, ''))] = true; }
+    });
+    return out;
+  }
+  function studentTokens(s){
+    var t = tokensFrom(s, ['id','studentId','childId','firebaseKey','_key','key','studentNo','studentNumber','code','number']);
+    try { var sid = text((typeof studentId === 'function') ? studentId(s) : ''); if (sid) { t[norm(sid)] = true; t[norm('k_' + sid.replace(/^k_/, ''))] = true; } } catch(_e) {}
+    return t;
+  }
+  function evalTokens(e){ return tokensFrom(e, ['studentId','student_id','childId','linkedStudentId','approvedStudentId','studentKey','studentFirebaseKey','firebaseKey','_key','studentNo','studentNumber','code','studentCode']); }
+  function namesForStudent(s){
+    var a = [];
+    try { if (typeof studentName === 'function') a.push(studentName(s)); } catch(_e) {}
+    ['name','studentName','studentNameAr','nameAr','arabicName','childName','fullName','nameEn','studentNameEn','englishName'].forEach(function(k){ a.push(firstLocal(s,[k])); });
+    return a.map(norm).filter(Boolean);
+  }
+  function namesForEval(e){ return ['studentName','approvedStudentName','childName','name','nameAr','studentNameAr','fullName','nameEn','studentNameEn','englishName'].map(function(k){return norm(firstLocal(e,[k]));}).filter(Boolean); }
+  function emailsFor(obj){
+    var vals = ['parentEmail','email','fatherEmail','dadEmail','motherEmail','momEmail','guardianEmail','parent_email'].map(function(k){ return norm(firstLocal(obj,[k])); });
+    try { if (typeof parentEmails === 'function') vals = vals.concat((parentEmails(obj)||[]).map(norm)); } catch(_e) {}
+    return vals.filter(Boolean);
+  }
+  function classesFor(obj){ return ['cls','class','className','classId','studentClass','classroom','room','section'].map(function(k){ return norm(firstLocal(obj,[k])); }).filter(Boolean); }
+  function intersects(a,b){ for (var k in a) if (b[k]) return true; return false; }
+  function listIntersects(a,b){ var map = {}; a.forEach(function(x){ map[x]=true; }); return b.some(function(x){ return !!map[x]; }); }
+  function visible(e){
+    var st = norm(firstLocal(e, ['status','approvalStatus','state','decision']));
+    if (e && (e.deleted === true || e.isDeleted === true || e._deleted === true || e.archived === true)) return false;
+    if (['deleted','rejected','removed','\u0645\u0631\u0641\u0648\u0636','\u0645\u062d\u0630\u0648\u0641'].indexOf(st) >= 0) return false;
+    return !st || ['approved','accepted','complete','completed','\u0645\u0639\u062a\u0645\u062f','\u0645\u0642\u0628\u0648\u0644'].indexOf(st) >= 0 || !!(e && (e.approvedAt || e.stampDataUrl || e.approvedBy));
+  }
+  function linked(e, s){
+    try { if (typeof evaluationLinkedToStudent === 'function' && evaluationLinkedToStudent(e, s)) return true; } catch(_e) {}
+    try { if (typeof sameStudent === 'function' && sameStudent(e, s)) return true; } catch(_e) {}
+    if (intersects(studentTokens(s), evalTokens(e))) return true;
+    var id = norm(firstLocal(e, ['id','evaluationId','evalId','firebaseKey','_key','key']));
+    var st = studentTokens(s);
+    for (var k in st) if (k && id && id.indexOf(k) >= 0) return true;
+    var nameHit = listIntersects(namesForStudent(s), namesForEval(e));
+    var classHit = listIntersects(classesFor(s), classesFor(e));
+    var emailHit = listIntersects(emailsFor(s), emailsFor(e));
+    return !!(nameHit && (classHit || emailHit || !classesFor(e).length));
+  }
+  window.kpParentFindEvaluationsForStudent = function(student){
+    var s = student || currentStudent();
+    var seen = {}, result = [];
+    collectEvaluations().forEach(function(e){
+      if (!visible(e) || !linked(e, s)) return;
+      var key = text(firstLocal(e, ['id','evaluationId','evalId','firebaseKey','_key','key'])) || JSON.stringify(e).slice(0,300);
+      if (!seen[key]) { seen[key]=true; result.push(e); }
+    });
+    result.sort(function(a,b){ return text(firstLocal(b,['approvedAt','updatedAt','createdAt','date'])) > text(firstLocal(a,['approvedAt','updatedAt','createdAt','date'])) ? 1 : -1; });
+    return result;
+  };
+  var originalLoad = window.loadParentEvaluations || (typeof loadParentEvaluations === 'function' ? loadParentEvaluations : null);
+  var loadingOnce = false;
+  function requestLoad(){
+    if (loadingOnce || !originalLoad) return;
+    loadingOnce = true;
+    Promise.resolve(originalLoad()).then(function(){ setTimeout(function(){ try { window.renderEvaluations(); } catch(_e) {} }, 100); }).catch(function(){});
+  }
+  window.evaluationsForStudent = function(){ return window.kpParentFindEvaluationsForStudent(currentStudent()); };
+  window.renderEvaluations = function(){
+    var list = window.evaluationsForStudent();
+    window.parentEvaluations = list;
+    try { parentEvaluations = list; } catch(_e) {}
+    var box = document.getElementById('viewEvaluations');
+    if (!box) return;
+    if (!list.length) requestLoad();
+    box.innerHTML = '<h3>\u0627\u0644\u062a\u0642\u064a\u064a\u0645\u0627\u062a</h3>' + (list.length ? list.map(function(e,i){
+      var st = norm(firstLocal(e, ['status','approvalStatus','state','decision']));
+      var approved = !st || st === 'approved' || st === 'accepted' || st === '\u0645\u0639\u062a\u0645\u062f' || !!e.approvedAt || !!e.stampDataUrl;
+      return '<div class="listItem"><span class="badge">' + (approved ? '\u0645\u0639\u062a\u0645\u062f' : '\u0642\u064a\u062f \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629') + '</span> <b>' + html(firstLocal(e,['quarter','term','period']) || '\u062a\u0642\u064a\u064a\u0645') + '</b><br><span>\u0627\u0644\u0639\u0627\u0645 \u0627\u0644\u062f\u0631\u0627\u0633\u064a: ' + html(firstLocal(e,['academicYear','year','schoolYear']) || '-') + '</span><br><span>\u0627\u0644\u0646\u0645\u0648\u0630\u062c: ' + html(firstLocal(e,['formId','formName','level']) || '-') + '</span><div class="itemActions"><button class="btn" onclick="viewEvaluation('+i+')">\u0639\u0631\u0636 \u0627\u0644\u062a\u0642\u064a\u064a\u0645</button><button class="btnBlue" onclick="viewEvaluation('+i+',true)">PDF / \u0637\u0628\u0627\u0639\u0629</button></div></div>';
+    }).join('') : '<div class="hint">\u0644\u0627 \u062a\u0648\u062c\u062f \u062a\u0642\u064a\u064a\u0645\u0627\u062a \u0645\u0631\u062a\u0628\u0637\u0629 \u0628\u0647\u0630\u0627 \u0627\u0644\u0637\u0627\u0644\u0628.</div>');
+  };
+  window.viewEvaluation = function(i, autoPrint){
+    var list = window.parentEvaluations && window.parentEvaluations.length ? window.parentEvaluations : window.evaluationsForStudent();
+    var e = list[Number(i)] || null;
+    if (!e) { requestLoad(); if (typeof openDetail === 'function') openDetail('Evaluation','<div class="hint">\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0627\u0644\u062a\u0642\u064a\u064a\u0645.</div>', autoPrint); return; }
+    if (typeof window.renderExactEvaluation === 'function') return window.renderExactEvaluation(e, autoPrint);
+    if (typeof renderExactEvaluation === 'function') return renderExactEvaluation(e, autoPrint);
+  };
+  try { evaluationsForStudent = window.evaluationsForStudent; renderEvaluations = window.renderEvaluations; viewEvaluation = window.viewEvaluation; } catch(_e) {}
+})();
+</script>
+<script id="kp-parent-evaluation-final-match-20260713">
+(function(){
+  if (window.__kpParentEvaluationFinalMatch20260713) return;
+  window.__kpParentEvaluationFinalMatch20260713 = true;
+
+  function text(v){ return String(v == null ? '' : v).trim(); }
+  function lower(v){ return text(v).toLowerCase(); }
+  function escFinal(v){
+    if (typeof esc === 'function') { try { return esc(v); } catch(_e) {} }
+    return text(v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+  }
+  function firstFinal(obj, keys){
+    if (typeof first === 'function') { try { var f = first(obj, keys); if (f != null && f !== '') return f; } catch(_e) {} }
+    obj = obj || {};
+    for (var i=0; i<keys.length; i++) if (obj[keys[i]] != null && text(obj[keys[i]]) !== '') return obj[keys[i]];
+    return '';
+  }
+  function normalizeEvalRecord(raw, key){
+    if (!raw || typeof raw !== 'object') return null;
+    var e = Object.assign({}, raw.value && typeof raw.value === 'object' ? raw.value : raw);
+    if (key) {
+      if (!e._key) e._key = key;
+      if (!e.firebaseKey) e.firebaseKey = key;
+      if (!e.id) e.id = key;
+    }
+    if (!e.studentFirebaseKey && e.studentKey) e.studentFirebaseKey = e.studentKey;
+    if (!e.studentKey && e.studentFirebaseKey) e.studentKey = e.studentFirebaseKey;
+    return e;
+  }
+  function asArray(section){
+    if (!section) return [];
+    if (Array.isArray(section)) return section.filter(Boolean).map(function(v,i){ return normalizeEvalRecord(v, String(i)); }).filter(Boolean);
+    if (typeof section === 'object') return Object.keys(section).map(function(k){ return normalizeEvalRecord(section[k], k); }).filter(Boolean);
+    return [];
+  }
+  function currentStudentFinal(){
+    try { if (Array.isArray(parentStudents) && parentStudents.length) return parentStudents[currentStudentIndex || 0] || parentStudents[0] || {}; } catch(_e) {}
+    return window.currentParentStudent || window.parentStudent || {};
+  }
+  function cleanId(v){ return lower(v).replace(/^k_/, '').replace(/[^a-z0-9\u0600-\u06ff]+/g, ''); }
+  function addToken(map, v){
+    var raw = text(v);
+    if (!raw) return;
+    map[lower(raw)] = true;
+    map[lower('k_' + raw.replace(/^k_/i, ''))] = true;
+    var c = cleanId(raw);
+    if (c) { map[c] = true; map['k_' + c] = true; }
+  }
+  function studentTokens(s){
+    var map = {};
+    ['id','studentId','childId','firebaseKey','_key','key','studentNo','studentNumber','code','number'].forEach(function(k){ addToken(map, s && s[k]); });
+    try { if (typeof studentId === 'function') addToken(map, studentId(s)); } catch(_e) {}
+    return map;
+  }
+  function evalTokens(e){
+    var map = {};
+    ['studentId','student_id','childId','linkedStudentId','approvedStudentId','studentKey','studentFirebaseKey','studentNo','studentNumber','code','studentCode'].forEach(function(k){ addToken(map, e && e[k]); });
+    var id = firstFinal(e, ['id','firebaseKey','_key','key','evaluationId','evalId']);
+    addToken(map, id);
+    var m = text(id).match(/^eval[_-]([^_-]+)/i);
+    if (m && m[1]) addToken(map, m[1]);
+    return map;
+  }
+  function names(obj){
+    var out = [];
+    try { if (typeof studentName === 'function') out.push(studentName(obj)); } catch(_e) {}
+    ['name','studentName','studentNameAr','approvedStudentName','childName','nameAr','fullName','nameEn','studentNameEn','englishName'].forEach(function(k){ out.push(firstFinal(obj,[k])); });
+    return out.map(lower).filter(Boolean);
+  }
+  function classes(obj){ return ['cls','class','className','classId','studentClass','classroom','room','section'].map(function(k){ return lower(firstFinal(obj,[k])); }).filter(Boolean); }
+  function emails(obj){ return ['parentEmail','email','fatherEmail','motherEmail','guardianEmail','parent_email'].map(function(k){ return lower(firstFinal(obj,[k])); }).filter(Boolean); }
+  function anyTokenHit(a,b){ for (var k in a) if (b[k]) return true; return false; }
+  function anyListHit(a,b){ var seen = {}; a.forEach(function(x){ seen[x]=true; }); return b.some(function(x){ return !!seen[x]; }); }
+  function evalVisible(e){
+    var st = lower(firstFinal(e, ['status','approvalStatus','state','decision']));
+    if (e && (e.deleted === true || e.isDeleted === true || e.archived === true || e._deleted === true)) return false;
+    if (['deleted','rejected','removed','refused','\u0645\u0631\u0641\u0648\u0636','\u0645\u062d\u0630\u0648\u0641'].indexOf(st) >= 0) return false;
+    return !st || ['approved','accepted','complete','completed','\u0645\u0639\u062a\u0645\u062f','\u0645\u0642\u0628\u0648\u0644'].indexOf(st) >= 0 || !!(e && (e.approvedAt || e.approvedBy || e.stampDataUrl));
+  }
+  function evalMatchesStudent(e, s){
+    try { if (typeof evaluationLinkedToStudent === 'function' && evaluationLinkedToStudent(e, s)) return true; } catch(_e) {}
+    try { if (typeof sameStudent === 'function' && sameStudent(e, s)) return true; } catch(_e) {}
+    if (anyTokenHit(studentTokens(s), evalTokens(e))) return true;
+    var id = lower(firstFinal(e, ['id','firebaseKey','_key','key','evaluationId','evalId']));
+    var st = studentTokens(s);
+    for (var k in st) if (k && id && id.indexOf(k) !== -1) return true;
+    var nameHit = anyListHit(names(s), names(e));
+    var classHit = anyListHit(classes(s), classes(e));
+    var emailHit = anyListHit(emails(s), emails(e));
+    return !!(nameHit && (classHit || emailHit || !classes(e).length));
+  }
+  function mergeEvaluationSection(target, section){
+    target = target || {};
+    asArray(section).forEach(function(e){
+      var key = text(firstFinal(e, ['firebaseKey','id','_key','key','evaluationId','evalId'])) || ('eval_' + Object.keys(target).length);
+      target[key] = e;
+    });
+    return target;
+  }
+  function firebaseRoot(){
+    var svc = ((window.NURSERY_TENANT_CONFIG || {}).services || {});
+    var raw = text(svc.firebaseBaseUrl || window.FIREBASE_DB_URL || window.FB_ROOT || '').replace(/\/+$/, '');
+    if (typeof FB_BASE === 'string' && FB_BASE) raw = FB_BASE.replace(/\/nursery_data$/i, '');
+    return raw;
+  }
+  async function refreshEvaluationData(){
+    var root = firebaseRoot();
+    var merged = {};
+    var sourceDb = (typeof db !== 'undefined' && db) ? db : (window.db || {});
+    mergeEvaluationSection(merged, sourceDb && sourceDb.evaluations);
+    mergeEvaluationSection(merged, sourceDb && sourceDb.nursery_data && sourceDb.nursery_data.evaluations);
+    mergeEvaluationSection(merged, window.kpParentEvaluations);
+    if (root) {
+      var urls = [
+        root + '/nursery_data/evaluations.json?_=' + Date.now(),
+        root + '/evaluations.json?_=' + Date.now()
+      ];
+      if (typeof FB_BASE === 'string' && FB_BASE) urls.unshift(FB_BASE.replace(/\/+$/, '') + '/evaluations.json?_=' + Date.now());
+      var seenUrl = {};
+      for (var i=0; i<urls.length; i++) {
+        var url = urls[i];
+        if (seenUrl[url]) continue;
+        seenUrl[url] = true;
+        try {
+          var res = await fetch(url, { cache:'no-store' });
+          if (res.ok) mergeEvaluationSection(merged, await res.json());
+        } catch(_e) {}
+      }
+    }
+    try { db = db || {}; db.evaluations = merged; } catch(_e) { window.db = window.db || {}; window.db.evaluations = merged; }
+    window.kpParentEvaluations = asArray(merged);
+    return window.kpParentEvaluations;
+  }
+  function collectEvaluationsFinal(){
+    var out = {}, rootDb = (typeof db !== 'undefined' && db) ? db : (window.db || {});
+    mergeEvaluationSection(out, rootDb && rootDb.evaluations);
+    mergeEvaluationSection(out, rootDb && rootDb.nursery_data && rootDb.nursery_data.evaluations);
+    mergeEvaluationSection(out, window.kpParentEvaluations);
+    try { mergeEvaluationSection(out, JSON.parse(localStorage.getItem('kp_evaluations') || '[]') || []); } catch(_e) {}
+    return asArray(out);
+  }
+  function evaluationsForCurrentStudent(){
+    var s = currentStudentFinal();
+    var seen = {}, list = [];
+    collectEvaluationsFinal().forEach(function(e){
+      if (!evalVisible(e) || !evalMatchesStudent(e, s)) return;
+      var key = text(firstFinal(e, ['firebaseKey','id','_key','key','evaluationId','evalId'])) || JSON.stringify(e).slice(0,300);
+      if (!seen[key]) { seen[key] = true; list.push(e); }
+    });
+    list.sort(function(a,b){ return lower(firstFinal(b,['approvedAt','updatedAt','createdAt','date'])) > lower(firstFinal(a,['approvedAt','updatedAt','createdAt','date'])) ? 1 : -1; });
+    return list;
+  }
+  var loading = false;
+  function scheduleRefreshAndRender(){
+    if (loading) return;
+    loading = true;
+    refreshEvaluationData().then(function(){
+      loading = false;
+      if (document.getElementById('viewEvaluations')) window.renderEvaluations();
+    }).catch(function(){ loading = false; });
+  }
+  window.loadParentEvaluations = async function(){ return await refreshEvaluationData(); };
+  window.evaluationsForStudent = function(){ return evaluationsForCurrentStudent(); };
+  window.renderEvaluations = function(){
+    var list = evaluationsForCurrentStudent();
+    window.parentEvaluations = list;
+    try { parentEvaluations = list; } catch(_e) {}
+    var box = document.getElementById('viewEvaluations');
+    if (!box) return;
+    if (!list.length) scheduleRefreshAndRender();
+    box.innerHTML = '<h3>\u0627\u0644\u062a\u0642\u064a\u064a\u0645\u0627\u062a</h3>' + (list.length ? list.map(function(e,i){
+      return '<div class="listItem"><span class="badge">\u0645\u0639\u062a\u0645\u062f</span> <b>' + escFinal(firstFinal(e,['quarter','term','period']) || '\u062a\u0642\u064a\u064a\u0645') + '</b><br><span>\u0627\u0644\u0639\u0627\u0645 \u0627\u0644\u062f\u0631\u0627\u0633\u064a: ' + escFinal(firstFinal(e,['academicYear','year','schoolYear']) || '-') + '</span><br><span>\u0627\u0644\u0646\u0645\u0648\u0630\u062c: ' + escFinal(firstFinal(e,['formId','formName','level']) || '-') + '</span><div class="itemActions"><button class="btn" onclick="viewEvaluation('+i+')">\u0639\u0631\u0636 \u0627\u0644\u062a\u0642\u064a\u064a\u0645</button><button class="btnBlue" onclick="viewEvaluation('+i+',true)">PDF / \u0637\u0628\u0627\u0639\u0629</button></div></div>';
+    }).join('') : '<div class="hint">\u062c\u0627\u0631\u064a \u0641\u062d\u0635 \u0627\u0644\u062a\u0642\u064a\u064a\u0645\u0627\u062a \u0627\u0644\u0645\u0639\u062a\u0645\u062f\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0637\u0627\u0644\u0628...</div>');
+  };
+  window.viewEvaluation = function(i, autoPrint){
+    var list = (window.parentEvaluations && window.parentEvaluations.length) ? window.parentEvaluations : evaluationsForCurrentStudent();
+    var e = list[Number(i)] || null;
+    if (!e) { scheduleRefreshAndRender(); if (typeof openDetail === 'function') openDetail('\u0627\u0644\u062a\u0642\u064a\u064a\u0645','<div class="hint">\u062c\u0627\u0631\u064a \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u062a\u0642\u064a\u064a\u0645\u060c \u062d\u0627\u0648\u0644\u064a \u0645\u0631\u0629 \u0623\u062e\u0631\u0649 \u0628\u0639\u062f \u062b\u0648\u0627\u0646.</div>', autoPrint); return; }
+    if (typeof window.renderExactEvaluation === 'function') return window.renderExactEvaluation(e, autoPrint);
+    if (typeof renderExactEvaluation === 'function') return renderExactEvaluation(e, autoPrint);
+  };
+  var oldOpen = window.openDashboard;
+  if (typeof oldOpen === 'function' && !oldOpen.__kpEvalFinalWrapped) {
+    var wrappedOpen = function(){ var r = oldOpen.apply(this, arguments); scheduleRefreshAndRender(); return r; };
+    wrappedOpen.__kpEvalFinalWrapped = true;
+    window.openDashboard = wrappedOpen;
+    try { openDashboard = wrappedOpen; } catch(_e) {}
+  }
+  try { evaluationsForStudent = window.evaluationsForStudent; renderEvaluations = window.renderEvaluations; viewEvaluation = window.viewEvaluation; loadParentEvaluations = window.loadParentEvaluations; } catch(_e) {}
+  setTimeout(scheduleRefreshAndRender, 800);
+})();
+</script>
+<script id="kp-parent-live-session-restore-20260713">
+(function(){
+  "use strict";
+  if (window.__kpParentLiveSessionRestore20260713) return;
+  window.__kpParentLiveSessionRestore20260713 = true;
+
+  var RESTORING = false;
+  var SESSION_KEY = "kp_parent_session_v1";
+  var SESSION_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
+
+  function text(v){ return String(v == null ? "" : v).trim(); }
+  function lower(v){ return text(v).toLowerCase(); }
+  function byId(id){ return document.getElementById(id); }
+  function asArray(section){
+    if (!section) return [];
+    if (Array.isArray(section)) return section.filter(function(v){ return v && typeof v === "object"; });
+    if (typeof section === "object") return Object.keys(section).map(function(k){
+      var v = section[k];
+      if (!v || typeof v !== "object") return null;
+      return Object.assign({_key:k, firebaseKey:v.firebaseKey || k}, v);
+    }).filter(Boolean);
+    return [];
+  }
+  function readPath(obj, path){
+    var cur = obj;
+    for (var i = 0; i < path.length; i++){
+      if (!cur || typeof cur !== "object") return "";
+      cur = cur[path[i]];
+    }
+    return cur == null ? "" : cur;
+  }
+  function valuesFrom(obj, keys){
+    var out = [];
+    keys.forEach(function(k){
+      var v = readPath(obj, String(k).split("."));
+      if (Array.isArray(v)) v.forEach(function(x){ if (text(x)) out.push(text(x)); });
+      else if (text(v)) out.push(text(v));
+    });
+    return out;
+  }
+  function emailsOf(student){
+    var vals = [];
+    try { if (typeof parentEmails === "function") vals = vals.concat(parentEmails(student) || []); } catch(_e) {}
+    vals = vals.concat(valuesFrom(student, [
+      "parentEmail", "email", "fatherEmail", "motherEmail", "dadEmail", "momEmail", "guardianEmail",
+      "father.email", "mother.email", "dad.email", "mom.email", "guardian.email",
+      "parent.email", "parentEmails", "emails"
+    ]));
+    var seen = {}, out = [];
+    vals.map(lower).filter(Boolean).forEach(function(e){ if (!seen[e]) { seen[e] = true; out.push(e); } });
+    return out;
+  }
+  function isDeleted(row){
+    var st = lower(valuesFrom(row, ["status","state","studentStatus","enrollmentStatus","requestStatus","registrationStatus"]).join(" "));
+    if (row && (row.deleted === true || row.isDeleted === true || row.archived === true || row.removed === true)) return true;
+    return /deleted|removed|rejected|declined|cancelled|canceled|محذوف|مرفوض|ملغي/.test(st);
+  }
+  function accessEnabled(row){
+    if (!row) return false;
+    if (isDeleted(row)) return false;
+    var vals = valuesFrom(row, ["parentPortalEnabled","parentAccessEnabled","enabled","active","parentAccess.enabled","parentAccess.active","parentAccessStatus","portalAccessStatus"]);
+    if (!vals.length) return true;
+    var t = vals.map(lower).join(" ");
+    if (/false|disabled|inactive|off|no|\b0\b|معطل|غير مفعل/.test(t)) return false;
+    return true;
+  }
+  function idOf(row){
+    try { if (typeof studentId === "function") { var sid = text(studentId(row)); if (sid) return sid; } } catch(_e) {}
+    return text(valuesFrom(row, ["id","studentId","childId","studentKey","firebaseKey","_key","key"])[0]);
+  }
+  function nameOf(row){
+    try { if (typeof studentName === "function") { var n = text(studentName(row)); if (n) return n; } } catch(_e) {}
+    return text(valuesFrom(row, ["name","studentName","studentNameAr","nameAr","childName","fullName"])[0]);
+  }
+  function nameKey(v){
+    try { if (typeof arabicKey === "function") return arabicKey(v); } catch(_e) {}
+    return lower(v).replace(/[\s_\-.,،\/\\]+/g, "");
+  }
+  function identityKey(row, email){
+    var id = idOf(row);
+    if (id) return "id:" + lower(id).replace(/^k_/, "");
+    var n = nameKey(nameOf(row));
+    return n ? "name:" + n + "|" + lower(email) : "row:" + Math.random();
+  }
+  function officialStudents(root){
+    var rows = [];
+    rows = rows.concat(asArray(root && root.students));
+    rows = rows.concat(asArray(root && root.registrationRequests && root.registrationRequests.accepted));
+    return rows.filter(function(s){ return s && !isDeleted(s); });
+  }
+  function sameStudent(a, b){
+    var aid = idOf(a), bid = idOf(b);
+    if (aid && bid) {
+      var an = lower(aid).replace(/^k_/, ""), bn = lower(bid).replace(/^k_/, "");
+      if (an === bn) return true;
+    }
+    var ak = nameKey(nameOf(a)), bk = nameKey(nameOf(b));
+    return !!(ak && bk && ak === bk);
+  }
+  function enrichWithOfficial(candidate, officials, email){
+    var matches = officials.filter(function(s){ return sameStudent(candidate, s); });
+    if (!matches.length) {
+      var ce = emailsOf(candidate);
+      matches = officials.filter(function(s){
+        var se = emailsOf(s);
+        return ce.some(function(e){ return se.indexOf(e) >= 0; }) || se.indexOf(email) >= 0;
+      });
+    }
+    if (!matches.length) return candidate;
+    matches.sort(function(a,b){
+      var as = String(a._key || a.firebaseKey || "").indexOf("k_") === 0 ? 10000 : 0;
+      var bs = String(b._key || b.firebaseKey || "").indexOf("k_") === 0 ? 10000 : 0;
+      as += Object.keys(a || {}).length;
+      bs += Object.keys(b || {}).length;
+      return bs - as;
+    });
+    return Object.assign({}, candidate || {}, matches[0] || {});
+  }
+  function studentsForParent(root, email){
+    var officials = officialStudents(root);
+    var out = [];
+    officials.forEach(function(s){
+      if (accessEnabled(s) && emailsOf(s).indexOf(email) >= 0) out.push(s);
+    });
+    [root && root.parentAccessCodes, root && root.parentPortalAccess, root && root.parentPasswords, root && root.parents].forEach(function(section){
+      asArray(section).forEach(function(access){
+        if (!accessEnabled(access) || emailsOf(access).indexOf(email) < 0) return;
+        var candidates = [];
+        candidates = candidates.concat(asArray(access.students));
+        [access.student, access.child, access.data, access.profile].forEach(function(x){ if (x && typeof x === "object") candidates.push(x); });
+        if (!candidates.length) candidates.push(access);
+        candidates.forEach(function(c){ out.push(enrichWithOfficial(c, officials, email)); });
+      });
+    });
+    var seen = {}, clean = [];
+    out.forEach(function(s){
+      s = enrichWithOfficial(s, officials, email);
+      if (!s || isDeleted(s) || !accessEnabled(s)) return;
+      if (emailsOf(s).indexOf(email) < 0) return;
+      if (!idOf(s) && !nameOf(s)) return;
+      var key = identityKey(s, email);
+      if (seen[key]) return;
+      seen[key] = true;
+      clean.push(s);
+    });
+    return clean;
+  }
+  function firebaseRoot(){
+    var raw = "";
+    try { raw = text(FB_BASE); } catch(_e) {}
+    if (!raw) {
+      var cfg = window.NURSERY_TENANT_CONFIG || {}, services = cfg.services || {}, fb = cfg.firebase || {};
+      raw = text(services.firebaseBaseUrl || services.firebaseUrl || fb.databaseURL || window.FIREBASE_DB_URL || window.FIREBASE_URL || "");
+      raw = raw.replace(/\/+$/, "");
+      if (raw && !/\/nursery_data$/i.test(raw)) raw += "/nursery_data";
+    }
+    return raw.replace(/\/+$/, "");
+  }
+  async function fetchFreshDb(){
+    var base = firebaseRoot();
+    if (!base) throw new Error("Firebase URL is missing");
+    var res = await fetch(base + ".json?_=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error("Firebase HTTP " + res.status);
+    var data = await res.json() || {};
+    try { db = data; } catch(_e) { window.db = data; }
+    return data;
+  }
+  function session(){
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch(_e) { return null; }
+  }
+  function saveCleanSession(){
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        email: lower(currentParentEmail || ""),
+        selectedIndex: currentStudentIndex || 0,
+        savedAt: Date.now()
+      }));
+    } catch(_e) {}
+  }
+  window.saveParentSession = saveParentSession = saveCleanSession;
+
+  async function liveRestore(){
+    if (RESTORING) return false;
+    var saved = session();
+    if (!saved || !saved.email || !saved.savedAt || Date.now() - Number(saved.savedAt || 0) > SESSION_MAX_AGE) {
+      try { clearParentSession(); } catch(_e) { try { localStorage.removeItem(SESSION_KEY); } catch(_e2) {} }
+      return false;
+    }
+    RESTORING = true;
+    try {
+      var email = lower(saved.email);
+      currentParentEmail = email;
+      var emailInput = byId("parentEmail");
+      if (emailInput) emailInput.value = email;
+      var fresh = await fetchFreshDb();
+      var students = studentsForParent(fresh, email);
+      if (!students.length) {
+        try { clearParentSession(); } catch(_e) { localStorage.removeItem(SESSION_KEY); }
+        document.body.classList.remove("parentLoggedIn");
+        return false;
+      }
+      parentStudents = students;
+      window.parentStudents = students;
+      currentStudentIndex = Math.min(Number(saved.selectedIndex || 0) || 0, students.length - 1);
+      try { if (typeof loadParentEvaluations === "function") await loadParentEvaluations(); } catch(_e) {}
+      saveCleanSession();
+      var hero = byId("loginHero"), login = byId("loginCard"), otp = byId("otpCard"), dash = byId("dashboard");
+      if (hero) hero.classList.add("hidden");
+      if (login) login.classList.add("hidden");
+      if (otp) otp.classList.add("hidden");
+      if (dash) dash.classList.remove("hidden");
+      document.body.classList.add("parentLoggedIn");
+      if (typeof renderStudentTabs === "function") renderStudentTabs();
+      if (typeof selectStudent === "function") selectStudent(currentStudentIndex);
+      return true;
+    } catch(_err) {
+      return false;
+    } finally {
+      RESTORING = false;
+    }
+  }
+
+  window.restoreParentSession = restoreParentSession = liveRestore;
+
+  var oldOpen = null;
+  try { oldOpen = window.openDashboard || openDashboard; } catch(_e) {}
+  if (oldOpen && !oldOpen.__kpLiveRestoreWrapped) {
+    var wrappedOpen = function(){
+      if (!parentStudents || !parentStudents.length || !idOf(parentStudents[currentStudentIndex || 0])) {
+        liveRestore();
+        return;
+      }
+      var hero = byId("loginHero"), login = byId("loginCard"), otp = byId("otpCard");
+      if (hero) hero.classList.add("hidden");
+      if (login) login.classList.add("hidden");
+      if (otp) otp.classList.add("hidden");
+      return oldOpen.apply(this, arguments);
+    };
+    wrappedOpen.__kpLiveRestoreWrapped = true;
+    window.openDashboard = openDashboard = wrappedOpen;
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(function(){
+      var saved = session();
+      if (saved && saved.email) liveRestore();
+    }, 80);
+  });
+})();
+</script>
 </body>
+<script id="kp-parent-evaluation-direct-match-20260713">
+(function(){
+  "use strict";
+  var loaded = false;
+  var loadingPromise = null;
 
-
-
-
-
-
-
+  function byId(id){ return document.getElementById(id); }
+  function text(v){ return String(v == null ? "" : v).trim(); }
+  function lower(v){ return text(v).toLowerCase(); }
+  function html(v){ return text(v).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+  function first(o, keys){ for (var i = 0; i < keys.length; i++){ var v = o && o[keys[i]]; if (v !== undefined && v !== null && text(v) !== "") return v; } return ""; }
+  function asArray(section){
+    var out = [];
+    if (!section) return out;
+    if (Array.isArray(section)) {
+      section.forEach(function(v, i){ if (v && typeof v === "object") out.push(Object.assign({_key: text(v._key || v.key || i)}, v)); });
+      return out;
+    }
+    if (typeof section === "object") {
+      Object.keys(section).forEach(function(k){ var v = section[k]; if (v && typeof v === "object") out.push(Object.assign({_key: k}, v)); });
+    }
+    return out;
+  }
+  function addSection(out, seen, section){
+    asArray(section).forEach(function(e){
+      var key = text(e._key || e.key || e.id || JSON.stringify(e).slice(0, 200));
+      if (!seen[key]) { seen[key] = true; out.push(e); }
+    });
+  }
+  function firebaseRoot(){
+    var cfg = window.NURSERY_TENANT_CONFIG || {};
+    var services = cfg.services || {};
+    var fb = cfg.firebase || {};
+    var raw = text(services.firebaseBaseUrl || fb.databaseURL || window.FIREBASE_DB_URL || "");
+    try { if (!raw && typeof FB_BASE === "string") raw = FB_BASE; } catch(_e) {}
+    raw = raw.replace(/\/+$/, "").replace(/\/nursery_data$/i, "");
+    return raw;
+  }
+  async function fetchJson(url){
+    var res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  }
+  async function loadEvaluations(){
+    if (loadingPromise) return loadingPromise;
+    loadingPromise = (async function(){
+      var root = firebaseRoot();
+      var merged = [];
+      var seen = {};
+      try { addSection(merged, seen, window.kpParentEvaluations); } catch(_e) {}
+      try { addSection(merged, seen, window.parentEvaluations); } catch(_e) {}
+      try { addSection(merged, seen, window.evaluations); } catch(_e) {}
+      try { addSection(merged, seen, window.db && window.db.evaluations); } catch(_e) {}
+      try { addSection(merged, seen, window.db && window.db.nursery_data && window.db.nursery_data.evaluations); } catch(_e) {}
+      try { addSection(merged, seen, JSON.parse(localStorage.getItem("kp_evaluations") || "[]")); } catch(_e) {}
+      if (root) {
+        var urls = [root + "/nursery_data/evaluations.json?_=" + Date.now(), root + "/evaluations.json?_=" + Date.now()];
+        for (var i = 0; i < urls.length; i++) {
+          try { addSection(merged, seen, await fetchJson(urls[i])); } catch(_err) {}
+        }
+      }
+      window.kpParentEvaluations = merged;
+      loaded = true;
+      return merged;
+    })();
+    return loadingPromise;
+  }
+  function currentStudent(){
+    try { if (Array.isArray(parentStudents) && parentStudents.length) return parentStudents[currentStudentIndex || 0] || parentStudents[0] || {}; } catch(_e) {}
+    return window.currentParentStudent || window.parentStudent || {};
+  }
+  function tokensFromStudent(s){
+    var out = [];
+    ["id","studentId","childId","key","_key","firebaseKey","studentKey","studentFirebaseKey","serial","code"].forEach(function(k){ out.push(first(s, [k])); });
+    var id = text(first(s, ["id","studentId","childId","serial"]));
+    if (id) out.push("k_" + id, id.replace(/^#/, ""));
+    return out.map(lower).filter(Boolean);
+  }
+  function tokensFromEvaluation(e){
+    var out = [];
+    ["studentId","childId","studentKey","studentFirebaseKey","studentFirebaseId","firebaseKey","key","_key","studentCode"].forEach(function(k){ out.push(first(e, [k])); });
+    var key = text(first(e, ["_key","key","id"]));
+    var m = key.match(/(?:^|_)eval[_-]?(\d+)|(?:^|_)student[_-]?(\d+)|(?:^|_)(\d+)(?:_|$)/i);
+    if (m) { var n = m[1] || m[2] || m[3]; out.push(n, "k_" + n); }
+    var sid = text(first(e, ["studentId","childId"]));
+    if (sid) out.push("k_" + sid);
+    return out.map(lower).filter(Boolean);
+  }
+  function visibleEvaluation(e){
+    var status = lower(first(e, ["approvalStatus","status","state"]));
+    if (["deleted","removed","rejected","refused","cancelled"].indexOf(status) >= 0) return false;
+    return !status || ["approved","accepted","complete","completed","معتمد","مقبول"].indexOf(status) >= 0 || !!(e && (e.approvedAt || e.approvedBy || e.stampDataUrl || e.skills));
+  }
+  function matchEvaluation(e, s){
+    if (!visibleEvaluation(e)) return false;
+    var st = tokensFromStudent(s);
+    var et = tokensFromEvaluation(e);
+    for (var i = 0; i < st.length; i++) if (et.indexOf(st[i]) >= 0) return true;
+    var sName = lower(first(s, ["name","studentName","studentNameAr","nameAr","fullName","childName"]));
+    var eName = lower(first(e, ["studentName","studentNameAr","name","childName","approvedStudentName"]));
+    var sNameEn = lower(first(s, ["nameEn","studentNameEn","englishName"]));
+    var eNameEn = lower(first(e, ["studentNameEn","englishName","nameEn"]));
+    var sClass = lower(first(s, ["classId","classKey","className","class","grade"]));
+    var eClass = lower(first(e, ["classId","classKey","className","class","grade"]));
+    if (sName && eName && sName === eName) return !sClass || !eClass || sClass === eClass;
+    if (sNameEn && eNameEn && sNameEn === eNameEn) return !sClass || !eClass || sClass === eClass;
+    return false;
+  }
+  function matchedEvaluations(){
+    var s = currentStudent();
+    var all = asArray(window.kpParentEvaluations || []);
+    return all.filter(function(e){ return matchEvaluation(e, s); });
+  }
+  function renderCard(e, i){
+    return '<div class="listItem"><span class="badge">\u0645\u0639\u062a\u0645\u062f</span> <b>' + html(first(e, ["quarter","term","period"]) || "\u062a\u0642\u064a\u064a\u0645") + '</b><br><span>\u0627\u0644\u0639\u0627\u0645 \u0627\u0644\u062f\u0631\u0627\u0633\u064a: ' + html(first(e, ["academicYear","year","schoolYear"]) || "-") + '</span><br><span>\u0627\u0644\u0646\u0645\u0648\u0630\u062c: ' + html(first(e, ["formId","formName","level"]) || "-") + '</span><div class="itemActions"><button class="btn" onclick="viewEvaluation(' + i + ')">\u0639\u0631\u0636 \u0627\u0644\u062a\u0642\u064a\u064a\u0645</button><button class="btnBlue" onclick="viewEvaluation(' + i + ',true)">PDF / \u0637\u0628\u0627\u0639\u0629</button></div></div>';
+  }
+  window.evaluationsForStudent = function(){
+    var list = matchedEvaluations();
+    window.parentEvaluations = list;
+    return list;
+  };
+  window.renderEvaluations = function(){
+    var box = byId("viewEvaluations");
+    if (!box) return;
+    if (!loaded) {
+      box.innerHTML = '<h3>\u0627\u0644\u062a\u0642\u064a\u064a\u0645\u0627\u062a</h3><div class="hint">\u062c\u0627\u0631\u064a \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u062a\u0642\u064a\u064a\u0645\u0627\u062a...</div>';
+      loadEvaluations().then(function(){ window.renderEvaluations(); });
+      return;
+    }
+    var list = window.evaluationsForStudent();
+    box.innerHTML = '<h3>\u0627\u0644\u062a\u0642\u064a\u064a\u0645\u0627\u062a</h3>' + (list.length ? list.map(renderCard).join("") : '<div class="hint">\u0644\u0627 \u062a\u0648\u062c\u062f \u062a\u0642\u064a\u064a\u0645\u0627\u062a \u0645\u0631\u062a\u0628\u0637\u0629 \u0628\u0647\u0630\u0627 \u0627\u0644\u0637\u0627\u0644\u0628.</div>');
+  };
+  window.loadParentEvaluations = loadEvaluations;
+  window.viewEvaluation = function(i, autoPrint){
+    var list = (window.parentEvaluations && window.parentEvaluations.length) ? window.parentEvaluations : window.evaluationsForStudent();
+    var e = list[Number(i)] || {};
+    if (!Object.keys(e).length) {
+      if (typeof openDetail === "function") openDetail("Evaluation", '<div class="hint">No evaluation data found.</div>', autoPrint);
+      return;
+    }
+    if (typeof window.renderExactEvaluation === "function") return window.renderExactEvaluation(e, autoPrint);
+    if (typeof renderExactEvaluation === "function") return renderExactEvaluation(e, autoPrint);
+  };
+  try { evaluationsForStudent = window.evaluationsForStudent; renderEvaluations = window.renderEvaluations; viewEvaluation = window.viewEvaluation; loadParentEvaluations = window.loadParentEvaluations; } catch(_e) {}
+  loadEvaluations().then(function(){ var box = byId("viewEvaluations"); if (box && !box.classList.contains("hidden")) window.renderEvaluations(); });
+})();
+</script>
 
 
