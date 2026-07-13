@@ -2920,6 +2920,81 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){re
 })();
 </script>
 
+<script id="kp-parent-session-visibility-final-20260713">
+(function(){
+  "use strict";
+  if (window.__kpParentSessionVisibilityFinal20260713) return;
+  window.__kpParentSessionVisibilityFinal20260713 = true;
+  var restoring = false;
+
+  function byId(id){ return document.getElementById(id); }
+  function hidden(node){
+    if (!node) return true;
+    if (node.classList && node.classList.contains("hidden")) return true;
+    try { return getComputedStyle(node).display === "none"; } catch(_e) { return false; }
+  }
+  function sessionEmail(){
+    try {
+      var raw = localStorage.getItem("kp_parent_session_v1");
+      var session = raw ? JSON.parse(raw) : null;
+      return session && session.email ? String(session.email).trim() : "";
+    } catch(_e) {
+      return "";
+    }
+  }
+  function dashboardVisible(){
+    var dash = byId("dashboard");
+    return !!dash && !hidden(dash);
+  }
+  function hideLogin(){
+    ["loginHero","loginCard","otpCard"].forEach(function(id){
+      var node = byId(id);
+      if (node) node.classList.add("hidden");
+    });
+  }
+  function paint(){
+    try { if (typeof renderStudentTabs === "function") renderStudentTabs(); } catch(_e) {}
+    try { if (typeof renderProfile === "function") renderProfile(); } catch(_e) {}
+    try { if (typeof renderPayments === "function") renderPayments(); } catch(_e) {}
+    try { if (typeof renderEvaluations === "function") renderEvaluations(); } catch(_e) {}
+  }
+  function fix(){
+    var dash = byId("dashboard");
+    var hasSession = !!sessionEmail();
+    if (hasSession && dash) {
+      document.body.classList.add("parentLoggedIn");
+      dash.classList.remove("hidden");
+      hideLogin();
+      paint();
+      if (!restoring && typeof window.restoreParentSession === "function") {
+        restoring = true;
+        Promise.resolve(window.restoreParentSession()).finally(function(){ restoring = false; setTimeout(paint, 100); });
+      }
+      return;
+    }
+    if (dashboardVisible()) {
+      hideLogin();
+      paint();
+    }
+  }
+  function start(){
+    fix();
+    setTimeout(fix, 200);
+    setTimeout(fix, 800);
+    setTimeout(fix, 2000);
+    if (window.MutationObserver) {
+      var observer = new MutationObserver(fix);
+      ["dashboard","loginCard","otpCard","loginHero"].forEach(function(id){
+        var node = byId(id);
+        if (node) observer.observe(node, {attributes:true, attributeFilter:["class","style"]});
+      });
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  else start();
+})();
+</script>
+
 <script id="kp-parent-dashboard-visibility-20260713">
 (function(){
   "use strict";
