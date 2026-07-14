@@ -22,6 +22,7 @@
   firebase: {
     apiKey: "AIzaSyDb9N7kSOt4PgU4XBi9ngV7NFfLcg7lp30",
     authDomain: "thimar-nursery.firebaseapp.com",
+    databaseURL: "https://thimar-nursery-default-rtdb.firebaseio.com",
     projectId: "thimar-nursery",
     storageBucket: "thimar-nursery.firebasestorage.app",
     messagingSenderId: "98783588209",
@@ -185,40 +186,22 @@
   setTimeout(applyAll, 1600);
 })();
 (function(){
-  if (window.__kpTenantParentVisibilityFix20260713) return;
-  window.__kpTenantParentVisibilityFix20260713 = true;
+  if (window.__kpTenantParentSessionGuard20260713b) return;
+  window.__kpTenantParentSessionGuard20260713b = true;
 
+  var restoreAttempted = false;
   var repainting = false;
-  var restoreRunning = false;
 
   function byId(id){ return document.getElementById(id); }
   function show(el){ if (el) el.classList.remove("hidden"); }
   function hide(el){ if (el) el.classList.add("hidden"); }
-  function text(el){ return el ? String(el.textContent || "").trim() : ""; }
-  function hasUsefulText(value){
-    value = String(value || "").trim();
-    return !!(value && value !== "-" && value !== "Parent Portal" && value !== "Themar Nursery Parent Portal");
-  }
+  function txt(el){ return el ? String(el.textContent || "").trim() : ""; }
   function sessionEmail(){
     try {
       var raw = localStorage.getItem("kp_parent_session_v1");
       var saved = raw ? JSON.parse(raw) : null;
       return saved && saved.email ? String(saved.email).trim() : "";
     } catch (_e) { return ""; }
-  }
-  function hasStudentData(){
-    try { if (Array.isArray(window.parentStudents) && window.parentStudents.length) return true; } catch (_e) {}
-    var summary = byId("childSummary");
-    if (summary) {
-      var filled = 0;
-      summary.querySelectorAll("b").forEach(function(b){ if (hasUsefulText(b.textContent)) filled++; });
-      if (filled >= 2 && text(summary).indexOf("@") >= 0) return true;
-    }
-    var tabs = byId("studentTabs");
-    if (tabs && tabs.querySelector("button") && hasUsefulText(text(tabs))) return true;
-    var profile = byId("profileView");
-    if (profile && hasUsefulText(text(profile)) && text(profile).indexOf("-") !== text(profile).length - 1) return true;
-    return false;
   }
   function repaint(){
     if (repainting) return;
@@ -228,70 +211,88 @@
     });
     repainting = false;
   }
-  function showLogin(message){
-    document.body.classList.remove("parentLoggedIn");
-    show(byId("loginHero"));
-    show(byId("loginCard"));
-    hide(byId("otpCard"));
-    hide(byId("dashboard"));
-    var msg = byId("loginMsg");
-    if (msg && message) {
-      msg.textContent = message;
-      msg.className = "msg on ok";
+  function hasRealStudentData(){
+    try { if (Array.isArray(window.parentStudents) && window.parentStudents.length) return true; } catch (_e) {}
+    var selected = null;
+    try { selected = window.selectedStudent || window.currentStudent || null; } catch (_e) {}
+    if (selected && (selected.name || selected.nameAr || selected.nameEn || selected.email || selected.parentEmail || selected.fatherEmail || selected.motherEmail)) return true;
+    var summary = byId("childSummary");
+    if (summary) {
+      var text = txt(summary);
+      if (text.indexOf("@") >= 0 && text.replace(/[\s\-]/g, "").length > 12) return true;
     }
+    var tabs = byId("studentTabs");
+    if (tabs && tabs.querySelector("button") && txt(tabs).replace(/[\s\-]/g, "").length > 3) return true;
+    return false;
   }
-  function showDashboard(){
+  function revealDashboardIfReady(){
     repaint();
-    if (!hasStudentData()) return false;
+    if (!hasRealStudentData()) return false;
     document.body.classList.add("parentLoggedIn");
     hide(byId("loginHero"));
     hide(byId("loginCard"));
     hide(byId("otpCard"));
     show(byId("dashboard"));
+    var msg = byId("loginMsg");
+    if (msg) msg.className = "msg";
     return true;
   }
-  function repair(){
-    if (showDashboard()) return true;
-    if (!sessionEmail()) return false;
-    showLogin("جاري تحميل بيانات الطالب...");
-    if (restoreRunning) return false;
+  function restoreOnce(){
+    if (restoreAttempted || !sessionEmail()) return;
+    restoreAttempted = true;
     try {
       if (typeof window.restoreParentSession === "function") {
-        restoreRunning = true;
-        Promise.resolve(window.restoreParentSession()).finally(function(){
-          restoreRunning = false;
-          setTimeout(showDashboard, 80);
-        });
+        Promise.resolve(window.restoreParentSession()).then(function(){
+          setTimeout(revealDashboardIfReady, 80);
+          setTimeout(revealDashboardIfReady, 500);
+        }).catch(function(){});
       }
-    } catch (_e) { restoreRunning = false; }
-    return false;
+    } catch (_e) {}
   }
-  function wrap(name, after){
+  function wrapAfter(name){
     var fn = window[name];
-    if (typeof fn !== "function" || fn.__kpTenantParentWrapped) return;
+    if (typeof fn !== "function" || fn.__kpTenantSessionGuardWrapped) return;
     var wrapped = function(){
       var result = fn.apply(this, arguments);
-      Promise.resolve(result).finally(function(){ setTimeout(after, 80); });
+      Promise.resolve(result).finally(function(){
+        setTimeout(revealDashboardIfReady, 80);
+        setTimeout(revealDashboardIfReady, 450);
+      });
       return result;
     };
-    wrapped.__kpTenantParentWrapped = true;
+    wrapped.__kpTenantSessionGuardWrapped = true;
     window[name] = wrapped;
+    try {
+      if (name === "openDashboard") openDashboard = window.openDashboard;
+      if (name === "selectStudent") selectStudent = window.selectStudent;
+      if (name === "loginParent") loginParent = window.loginParent;
+    } catch (_e) {}
   }
   function install(){
-    wrap("openDashboard", showDashboard);
-    wrap("restoreParentSession", repair);
-    wrap("selectStudent", showDashboard);
-    repair();
-    setTimeout(repair, 350);
-    setTimeout(repair, 1200);
-    setTimeout(function(){
-      if (sessionEmail() && !hasStudentData()) showLogin("لم يتم العثور على بيانات الطالب. يرجى تسجيل الدخول مرة أخرى.");
-    }, 6500);
+    wrapAfter("loginParent");
+    wrapAfter("openDashboard");
+    wrapAfter("selectStudent");
+    restoreOnce();
+    setTimeout(revealDashboardIfReady, 300);
+    setTimeout(revealDashboardIfReady, 1200);
   }
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install);
-  else install();
-  setTimeout(install, 500);
-  setTimeout(install, 1500);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install); else install();
+  setTimeout(install, 700);
 })();
+
+// Firebase URL compatibility bridge for parent portal builds.
+(function(){
+  if (window.__kpTenantFirebaseUrlGuard20260714) return;
+  window.__kpTenantFirebaseUrlGuard20260714 = true;
+  var cfg = window.NURSERY_TENANT_CONFIG = window.NURSERY_TENANT_CONFIG || {};
+  cfg.firebase = cfg.firebase || {};
+  cfg.services = cfg.services || {};
+  var url = String(cfg.services.firebaseBaseUrl || cfg.firebase.databaseURL || "").trim().replace(/\/+$/, "");
+  if (!url) return;
+  cfg.firebase.databaseURL = url;
+  cfg.services.firebaseBaseUrl = url;
+  window.FIREBASE_DB_URL = url;
+  window.FB_BASE = /\/nursery_data$/i.test(url) ? url : url + "/nursery_data";
+})();
+
 
