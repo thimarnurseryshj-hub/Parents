@@ -688,9 +688,9 @@ function kpEvalBuildFormHTML(form, student, editable, savedData, quarterId, lock
   // English left, logo center, Arabic right.
   var header = ''
     + '<div class="kp-eval-header" dir="ltr" style="border:2px solid var(--g2);border-radius:14px;padding:12px;margin-bottom:14px;background:#fff;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px">'
-    + '  <div style="font-weight:800;font-size:18px;color:#1a4a82;text-align:center">Themar Nursery</div>'
+    + '  <div style="font-weight:800;font-size:18px;color:#1a4a82;text-align:center">' + esc((nurserySettings && nurserySettings.name_en) || 'Themar Nursery') + '</div>'
     + '  <img src="' + kpEvalGetHeaderLogo() + '" alt="logo" style="width:90px;height:90px;object-fit:contain"/>'
-    + '  <div style="font-weight:800;font-size:18px;color:#1a4a82;text-align:center;direction:rtl">حضانة ثمار</div>'
+    + '  <div style="font-weight:800;font-size:18px;color:#1a4a82;text-align:center;direction:rtl">' + esc((nurserySettings && nurserySettings.name) || 'حضانة ثمار') + '</div>'
     + '</div>'
     + '<div style="text-align:center;font-size:18px;font-weight:800;margin-bottom:8px">' + escapeHtml(form.title) + '</div>'
     + '<div style="text-align:center;font-size:14px;color:var(--muted);margin-bottom:6px">' + escapeHtml(form.level) + ' — ' + escapeHtml(termLabel) + (yearLabel ? ' — ' + escapeHtml(yearLabel) : '') + '</div>'
@@ -947,9 +947,9 @@ window.renderExactEvaluation = function(e, autoPrint){
   if (oldHeader && oldHeader.parentNode) oldHeader.parentNode.removeChild(oldHeader);
   var cleanHeader = ''
     + '<div class="kp-parent-eval-print-header">'
-    + '  <div>Themar Nursery</div>'
-    + '  <img src="' + kpEvalGetHeaderLogo() + '" alt="Themar Nursery Logo">'
-    + '  <div class="ar">&#1581;&#1590;&#1575;&#1606;&#1577; &#1581;&#1583;&#1610;&#1602;&#1577; &#1575;&#1604;&#1571;&#1591;&#1601;&#1575;&#1604;</div>'
+    + '  <div>' + esc((nurserySettings && nurserySettings.name_en) || 'Themar Nursery') + '</div>'
+    + '  <img src="' + kpEvalGetHeaderLogo() + '" alt="Nursery Logo">'
+    + '  <div class="ar">' + esc((nurserySettings && nurserySettings.name) || 'حضانة ثمار') + '</div>'
     + '</div>';
   openDetail('\u0627\u0633\u062a\u0645\u0627\u0631\u0629 \u062a\u0642\u064a\u064a\u0645 \u0641\u0635\u0644\u064a\u0629', '<div class="kp-eval-print-parent">' + cleanHeader + temp.innerHTML + '</div>', autoPrint);
 }
