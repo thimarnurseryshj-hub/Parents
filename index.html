@@ -279,6 +279,10 @@ function getReceiptVerificationText(p){
   return getReceiptVerificationUrl(p);
 }
 
+function getReceiptQrImageUrl(p){
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(getReceiptVerificationText(p));
+}
+
 function ensureQRiousLoaded(){
   if(window.QRious) return Promise.resolve(window.QRious);
   if(window.KP_QRIOUS_LOADING) return window.KP_QRIOUS_LOADING;
@@ -297,6 +301,7 @@ async function renderReceiptVerification(root, p){
   if(!root) return;
   const code = getReceiptVerificationCode(p);
   root.querySelectorAll('[data-receipt-verify-code]').forEach(function(el){ el.textContent = code; });
+  root.querySelectorAll('img[data-receipt-qr-image]').forEach(function(img){ img.src = getReceiptQrImageUrl(p); });
   const canvases = root.querySelectorAll('canvas[data-receipt-qr]');
   if(!canvases.length) return;
   try{
@@ -304,6 +309,10 @@ async function renderReceiptVerification(root, p){
     canvases.forEach(function(canvas){
       new QRious({ element: canvas, value: getReceiptVerificationText(p), size: 96, level: 'M' });
     });
+    const renderedQr = canvases[0] && canvases[0].toDataURL ? canvases[0].toDataURL("image/png") : "";
+    if(renderedQr){
+      root.querySelectorAll('img[data-receipt-qr-image]').forEach(function(img){ img.src = renderedQr; });
+    }
   }catch(err){
     console.warn('QR generation failed:', err);
     canvases.forEach(function(canvas){
@@ -428,7 +437,8 @@ function buildReceiptHTML(p) {
         رقم التحقق: <span data-receipt-verify-code>${getReceiptVerificationCode(p)}</span>
         <div style="font-size:10px;color:#666;font-weight:700" dir="ltr">Scan QR to verify receipt online</div>
       </div>
-      <canvas data-receipt-qr width="96" height="96" style="width:76px;height:76px;background:#fff;border:1px solid #dceadf;border-radius:8px;padding:4px"></canvas>
+      <img data-receipt-qr-image="1" src="${getReceiptQrImageUrl(p)}" alt="Receipt verification QR" style="width:76px;height:76px;object-fit:contain;background:#fff;border:1px solid #dceadf;border-radius:8px;padding:4px">
+      <canvas data-receipt-qr width="96" height="96" style="display:none;width:76px;height:76px;background:#fff;border:1px solid #dceadf;border-radius:8px;padding:4px"></canvas>
     </div>
   </div>`;
 }
@@ -1246,7 +1256,22 @@ function openDetail(title,html,autoPrint){$("detailTitle").textContent=title;$("
 function closeDetail(){$("detailOverlay").classList.add("hidden")}
 function printDetail(){
  const title=($("detailTitle")&&$("detailTitle").textContent)||"Themar Nursery";
- const content=($("printArea")&&$("printArea").innerHTML)||"";
+ const sourceArea=$("printArea");
+ const printClone=sourceArea?sourceArea.cloneNode(true):null;
+ if(printClone){
+   printClone.querySelectorAll('canvas[data-receipt-qr]').forEach(function(canvas){
+     try{
+       const img=document.createElement("img");
+       img.src=canvas.toDataURL("image/png");
+       img.alt="Receipt verification QR";
+       img.setAttribute("data-receipt-qr-image","1");
+       img.style.cssText=canvas.getAttribute("style")||"width:76px;height:76px;background:#fff;border:1px solid #dceadf;border-radius:8px;padding:4px";
+       img.style.objectFit="contain";
+       canvas.replaceWith(img);
+     }catch(e){}
+   });
+ }
+ const content=printClone?printClone.innerHTML:"";
  if(!content.trim()){ alert("لا توجد بيانات للطباعة"); return; }
  const html='<!doctype html><html lang="'+(localStorage.getItem("kp_parent_lang")==="en"?"en":"ar")+'" dir="'+(localStorage.getItem("kp_parent_lang")==="en"?"ltr":"rtl")+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+'</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><style>@page{size:A4 landscape;margin:5mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:Tajawal,Arial,sans-serif;direction:'+(localStorage.getItem("kp_parent_lang")==="en"?"ltr":"rtl")+';-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:12px}.printToolbar{position:fixed;top:0;left:0;right:0;background:#e979ad;color:#fff;padding:10px;display:flex;gap:8px;justify-content:center;align-items:center;z-index:9}.printToolbar button{border:0;border-radius:10px;padding:9px 16px;font:inherit;font-weight:900;background:#fff;color:#e979ad}.printDoc{max-width:1120px;margin:48px auto 0}.table{width:100%;border-collapse:collapse}.table th,.table td{border:1px solid #cfded5;padding:7px;text-align:right;vertical-align:top}.table th{background:#f1fbf5;color:#e979ad}.docHeader{text-align:center;border-bottom:2px solid #cde9d8;padding-bottom:12px;margin-bottom:14px}.docLogo{width:82px;height:82px;object-fit:contain;border-radius:50%}.kp-parent-eval-print-header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;margin:0 0 8px 0;direction:ltr}.kp-parent-eval-print-header img{width:60px;height:60px;object-fit:contain;border-radius:50%}.kp-parent-eval-print-header div{font-weight:900;font-size:14px;color:#0f4a86;text-align:center}.kp-parent-eval-print-header .ar{direction:rtl}.kp-eval-print-parent{zoom:.88}.kp-eval-month-1{background:#dff0ff!important}.kp-eval-month-2{background:#fff0d6!important}.kp-eval-month-3{background:#e3f5e6!important}.kp-eval-table thead .kp-eval-month-1{background:#85c5f0!important;color:#063d6a!important}.kp-eval-table thead .kp-eval-month-2{background:#ffc978!important;color:#9a3e00!important}.kp-eval-table thead .kp-eval-month-3{background:#a6dcae!important;color:#14551f!important}.kp-eval-mobile-only,.kp-eval-cards{display:none!important}.kp-eval-desktop-only,.kp-eval-table-wrap{display:block!important;overflow:visible!important;border:0!important}.kp-eval-table{width:100%!important;border-collapse:collapse!important;font-size:7.8px!important;table-layout:fixed!important}.kp-eval-table th,.kp-eval-table td{border:1px solid #777!important;padding:1px 2px!important;line-height:1.08!important}.kp-eval-table input{width:10px!important;height:10px!important;margin:0!important}@media print{.printToolbar{display:none!important}.printDoc{margin:0}.noPrint{display:none!important}body{padding:0}.kp-eval-print-parent{zoom:.88;page-break-inside:avoid;break-inside:avoid}.kp-eval-table-wrap,.kp-eval-table,tr,td,th{page-break-inside:avoid;break-inside:avoid}}</style></head><body><div class="printToolbar"><button onclick="window.print()">طباعة / حفظ PDF</button><button onclick="window.close()">إغلاق</button><span>من خيار الوجهة اختاري حفظ PDF عند الحاجة</span></div><main class="printDoc">'+content+'</main><script>window.addEventListener("load",function(){setTimeout(function(){try{window.print()}catch(e){}},250)});<\/script></body></html>';
  const w=window.open('', '_blank');
